@@ -36,10 +36,13 @@ function volatility (returns) {
   return s * Math.sqrt(252)
 }
 
-function backTesting (assets, weightMethod, options) {
+function backTesting (assets, benchmark, weightMethod, options) {
   //  align returns
   // {symbol, days, dailyReturns}
-  const aligned = alignAssets(assets)
+  const aligned = alignAssets([benchmark, ...assets])
+
+  benchmark = aligned[0]
+  assets = aligned.slice(1)
 
   const days = aligned[0].days
 
@@ -49,13 +52,13 @@ function backTesting (assets, weightMethod, options) {
   for (let i = 0; i < days.length; i += 1) {
     //  each returns
     const holdingReturns = lastWeight
-      .map((w, a) => w * aligned[a].dailyReturns[i])
+      .map((w, a) => w * assets[a].dailyReturns[i])
     const dailyReturn = holdingReturns.reduce((a, b) => a + b, 0)
     returns.push(dailyReturn)
 
     let newHolding
     if (i === 0 || i % 53 === 0) {
-      const maybeNewHolding = weightMethod(aligned, days[i])
+      const maybeNewHolding = weightMethod(assets, days[i])
       const turnover = maybeNewHolding
         .map((h, i) => Math.abs(lastWeight[i] - h))
         .reduce((a, b) => a + b, 0)
@@ -81,10 +84,11 @@ function backTesting (assets, weightMethod, options) {
     holdings: holdings,
     dailyReturns: returns,
     series: series,
+    benchmark: cumulative(benchmark.dailyReturns),
     annualized: annualize(returns),
     sharpe: sharpe(returns),
     volatility: volatility(returns),
-    last: weightMethod(aligned, last(days))
+    last: weightMethod(assets, last(days))
   }
 }
 

@@ -72,6 +72,7 @@ export default {
       minWeight: 5,
       maxWeight: 80,
       turnoverConstraint: 10,
+      benchmark: 'SH511880',
       inputAsset: '',
       assets: [
         {symbol: 'CSIH11001', weight: 80},
@@ -82,6 +83,7 @@ export default {
       result: {
         days: [],
         series: [],
+        benchmark: [],
         annualized: 0.0,
         sharpe: 0.0,
         volatility: 0.0
@@ -111,6 +113,7 @@ export default {
               return res.json()
             })
         )
+        const benchmark = await fetch(`/api/asset/${this.benchmark}/daily`).then(res => res.json())
 
         let method
         if (this.weightMethod === 'manual_specified') {
@@ -123,7 +126,7 @@ export default {
           })
         }
 
-        const result = backTesting(assets, method,
+        const result = backTesting(assets, benchmark, method,
           {turnoverConstraint: this.turnoverConstraint / 100.0})
 
         console.log(result)
@@ -159,7 +162,13 @@ export default {
           Plotly.newPlot(refs.curve, [{
             x: result.days,
             y: result.series,
-            mode: 'lines'
+            mode: 'lines',
+            name: '组合'
+          }, {
+            x: result.days,
+            y: result.benchmark,
+            mode: 'lines',
+            name: '基准'
           }], {
             title: '模拟收益',
             yaxis: {tickformat: '.2%', tickfont: {size: 10}},

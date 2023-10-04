@@ -20,6 +20,7 @@
     "lodash-transpose": "^0.2.1",
     "matrix-multiplication": "^0.5.2",
     "morgan": "~1.9.1",
+    "node-cache": "^5.1.2",
     "plotly.js": "^2.26.1",
     "quadprog": "^1.6.1",
     "vue": "^2.5.2",
