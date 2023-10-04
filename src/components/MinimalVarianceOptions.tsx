@@ -14,21 +14,21 @@ type State = {}
 class MinimalVarianceOptions extends React.Component<Prop, State> {
 
   onMinWeightChange = (value: number | null) => {
-    const weight = value as number;
+    const weight = value as number / 100.0;
     this.props.onOptionsChange({
       ...this.props.value,
       minWeight: weight
     })
   }
   onMaxWeightChange = (value: number | null) => {
-    const weight = value as number;
+    const weight = value as number / 100.0;
     this.props.onOptionsChange({
       ...this.props.value,
       maxWeight: weight
     })
   }
   onTurnoverConstraintChange = (value: number | null) => {
-    const weight = value as number;
+    const weight = value as number / 100.0;
     this.props.onOptionsChange({
       ...this.props.value,
       turnoverConstraint: weight
