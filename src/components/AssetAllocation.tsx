@@ -98,29 +98,37 @@ class AssetAllocation extends React.Component<Prop, State> {
 
     const {assets, benchmark, method, options} = this.state
 
-    const assetsInfo = await Promise.all(
-      assets.map(it => fetchAsset(it.symbol))
-    )
-    const benchmarkInfo = await fetchAsset(benchmark)
+    try {
+      const assetsInfo = await Promise.all(
+        assets.map(it => fetchAsset(it.symbol))
+      )
+      const benchmarkInfo = await fetchAsset(benchmark)
 
-    let actualMethod: (assets: AssetInfo[], day: string) => number[]
-    if (method === 'manual_specified') {
-      const weights = assets.map(a => a.weight)
-      actualMethod = () => weights
-    } else {
-      actualMethod = minimalVarianceOptimizer(options)
+      let actualMethod: (assets: AssetInfo[], day: string) => number[]
+      if (method === 'manual_specified') {
+        const weights = assets.map(a => a.weight)
+        actualMethod = () => weights
+      } else {
+        actualMethod = minimalVarianceOptimizer(options)
+      }
+
+      const result = backTesting(assetsInfo, benchmarkInfo, actualMethod, options)
+
+      this.setState(() => ({
+        result,
+        assets: result.assets.map((a, i) => ({
+          symbol: a.symbol,
+          weight: result.last[i]
+        })),
+        running: false
+      }))
+    } catch (e) {
+      this.setState(() => ({
+        result: null,
+        running: false
+      }))
+      alert('获取资产数据失败')
     }
-
-    const result = backTesting(assetsInfo, benchmarkInfo, actualMethod, options)
-
-    this.setState(() => ({
-      result,
-      assets: result.assets.map((a, i) => ({
-        symbol: a.symbol,
-        weight: result.last[i]
-      })),
-      running: false
-    }))
   }
 
   render() {
