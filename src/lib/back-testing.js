@@ -1,3 +1,4 @@
+import {last} from 'lodash'
 import alignAssets from '@/lib/align-assets'
 
 const covariance = require('compute-covariance')
@@ -35,15 +36,15 @@ function volatility (returns) {
   return s * Math.sqrt(252)
 }
 
-function backTesting (assets, weightMethod) {
+function backTesting (assets, weightMethod, options) {
   //  align returns
   // {symbol, days, dailyReturns}
   const aligned = alignAssets(assets)
 
   const days = aligned[0].days
 
-  const intervals = []
-  const lastWeight = []
+  const holdings = []
+  const lastWeight = assets.map(a => 0.0)
   const returns = []
   for (let i = 0; i < days.length; i += 1) {
     //  each returns
@@ -54,24 +55,36 @@ function backTesting (assets, weightMethod) {
 
     let newHolding
     if (i === 0 || i % 53 === 0) {
-      newHolding = weightMethod(aligned, days[i])
-    } else {
-      newHolding = holdingReturns.map((h, ai) => (1 + h) * lastWeight[ai] / (1 + dailyReturn))
+      const maybeNewHolding = weightMethod(aligned, days[i])
+      const turnover = maybeNewHolding
+        .map((h, i) => Math.abs(lastWeight[i] - h))
+        .reduce((a, b) => a + b, 0)
+      if (turnover > (options.turnoverConstraint || 0.0)) {
+        newHolding = maybeNewHolding
+      }
     }
+
+    newHolding = newHolding ||
+      holdingReturns.map((r, ai) => (1 + r / lastWeight[ai]) * lastWeight[ai] / (1 + dailyReturn))
+
     lastWeight.splice(0, lastWeight.length)
     lastWeight.push(...newHolding)
+
+    holdings.push(newHolding)
   }
 
   let series = cumulative(returns)
 
   return {
     days,
-    intervals,
+    assets,
+    holdings: holdings,
     dailyReturns: returns,
     series: series,
     annualized: annualize(returns),
     sharpe: sharpe(returns),
-    volatility: volatility(returns)
+    volatility: volatility(returns),
+    last: weightMethod(aligned, last(days))
   }
 }
 

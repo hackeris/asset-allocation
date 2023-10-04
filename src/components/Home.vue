@@ -10,10 +10,18 @@
       <label for="specified_weight">指定配比</label>
 
       <div v-if="weightMethod === 'minimal_variance'" class="weight-options">
-        <label for="min_weight">最小比例</label>
-        <input type="number" id="min_weight" v-model="minWeight"/>%
-        <label for="max_weight">最大比例</label>
-        <input type="number" id="max_weight" v-model="maxWeight"/>%
+        <div class="option-item">
+          <label for="min_weight">最小比例</label>
+          <input type="number" id="min_weight" v-model="minWeight"/>%
+        </div>
+        <div class="option-item">
+          <label for="max_weight">最大比例</label>
+          <input type="number" id="max_weight" v-model="maxWeight"/>%
+        </div>
+        <div class="option-item">
+          <label for="turnover_constraint">换手率限制</label>
+          <input type="number" id="turnover_constraint" v-model="turnoverConstraint"/>%
+        </div>
       </div>
     </div>
     <div>
@@ -25,8 +33,8 @@
           <div class="asset-symbol">
             {{ item.symbol }}
           </div>
-          <div v-if="weightMethod === 'manual_specified'" class="asset-weight">
-            <input type="number" v-model="item.weight">%
+          <div class="asset-weight">
+            <input :disabled="weightMethod === 'minimal_variance'" type="number" v-model="item.weight">%
           </div>
           <div>
             <button v-on:click="remove(item.symbol)">x</button>
@@ -45,6 +53,8 @@
       </p>
       <div class="curve" ref="curve">
       </div>
+      <div class="holding" ref="holding">
+      </div>
     </div>
   </div>
 </template>
@@ -61,8 +71,13 @@ export default {
       weightMethod: 'minimal_variance',
       minWeight: 5,
       maxWeight: 80,
+      turnoverConstraint: 10,
       inputAsset: '',
-      assets: [],
+      assets: [
+        {symbol: 'CSIH11001', weight: 80},
+        {symbol: 'SH518880', weight: 10},
+        {symbol: 'SH510880', weight: 10}
+      ],
       running: false,
       result: {
         days: [],
@@ -75,7 +90,8 @@ export default {
   },
   methods: {
     onAddAsset: function () {
-      if (this.inputAsset !== '') {
+      let notFound = this.assets.findIndex(it => it.symbol === this.inputAsset) < 0
+      if (this.inputAsset !== '' && notFound) {
         this.assets.push({
           symbol: this.inputAsset,
           weight: 0.0
@@ -107,8 +123,16 @@ export default {
           })
         }
 
-        const result = backTesting(assets, method)
+        const result = backTesting(assets, method,
+          {turnoverConstraint: this.turnoverConstraint / 100.0})
 
+        console.log(result)
+        Object.assign(this, {
+          assets: result.assets.map((a, i) => ({
+            symbol: a.symbol,
+            weight: (result.last[i] * 100.0).toFixed(2)
+          }))
+        })
         Object.assign(this.result, result)
       } catch (e) {
         alert('获取资产信息失败')
@@ -128,6 +152,7 @@ export default {
       const refs = this.$refs
       if (this.running || this.result.days.length === 0) {
         Plotly.purge(refs.curve)
+        Plotly.purge(refs.holding)
       } else {
         const result = this.result
         this.$nextTick(() => {
@@ -137,6 +162,22 @@ export default {
             mode: 'lines'
           }], {
             title: '模拟收益',
+            yaxis: {tickformat: '.2%', tickfont: {size: 10}},
+            xaxis: {tickformat: '%Y-%m', hoverformat: '%Y-%m-%d'},
+            margin: {t: 30, b: 40, l: 50, r: 20},
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)'
+          })
+
+          const days = result.days
+          const holdingTraces = result.assets.map((a, i) => ({
+            x: days,
+            y: result.holdings.map(h => h[i]),
+            stackgroup: 'one',
+            name: a.symbol
+          }))
+          Plotly.newPlot(refs.holding, holdingTraces, {
+            title: '历史持仓',
             yaxis: {tickformat: '.2%', tickfont: {size: 10}},
             xaxis: {tickformat: '%Y-%m', hoverformat: '%Y-%m-%d'},
             margin: {t: 30, b: 40, l: 50, r: 20},
@@ -180,11 +221,20 @@ li {
 }
 
 .asset-weight > input {
-  width: 40px;
+  width: 50px;
 }
 
-.weight-options > input {
-  width: 40px;
+.weight-options {
+  margin-top: 10px;
+  display: flex;
+}
+
+.option-item {
+  padding: 0 10px;
+}
+
+.option-item > input {
+  width: 50px;
 }
 
 .summary > span {
@@ -193,6 +243,10 @@ li {
 
 .curve {
   margin-top: 5px;
-  height: 400px;
+  height: 300px;
+}
+
+.holding {
+  height: 200px;
 }
 </style>
