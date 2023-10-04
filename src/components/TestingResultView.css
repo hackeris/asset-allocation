@@ -1,0 +1,12 @@
+.summary > span {
+    padding: 0 10px;
+}
+
+.curve {
+    margin-top: 5px;
+    height: 300px;
+}
+
+.holding {
+    height: 200px;
+}

@@ -1,0 +1,9 @@
+.mv-options {
+    display: flex;
+}
+
+.mv-options-item {
+    margin: 0 10px;
+    display: flex;
+    align-items: center;
+}
