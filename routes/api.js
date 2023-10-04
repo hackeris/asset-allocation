@@ -11,13 +11,12 @@ router.get('/asset/:symbol/daily', async function (req, res, next) {
   const cached = assetCache.get(symbol)
   if (cached) {
     res.json(cached)
+  } else {
+    const daily = await xueqiu.getDailyLine(symbol)
+    res.json(daily)
+    //  cache
+    assetCache.set(symbol, daily)
   }
-
-  const daily = await xueqiu.getDailyLine(symbol)
-  res.json(daily)
-
-  //  cache
-  assetCache.set(symbol, daily)
 })
 
 module.exports = router
