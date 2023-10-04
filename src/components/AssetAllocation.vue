@@ -65,7 +65,7 @@ import Plotly from '@/lib/plotly'
 import minimalVarianceOptimizer from '@/lib/minimal-variance'
 
 export default {
-  name: 'Home',
+  name: 'AssetAllocation',
   data () {
     return {
       weightMethod: 'minimal_variance',
