@@ -13,6 +13,16 @@ type AssetInfo = {
   days: string[]
 }
 
+/**
+ * to yyyy-MM-dd
+ * @param d Date
+ */
+function dateToString(d: Date): string {
+  const d2 = new Date(d.getTime())
+  d2.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+  return d2.toISOString().substring(0, 10)
+}
+
 const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Edg/117.0.2045.43'
 
 async function getDailyLine(symbol: string): Promise<AssetInfo> {
@@ -61,7 +71,7 @@ async function getDailyLine(symbol: string): Promise<AssetInfo> {
 
     const lastFetched = Object.values(data.item).map(it => ({
       dailyReturn: it[percentIndex] as number / 100.0,
-      day: new Date(it[tsIndex] as number).toISOString().substring(0, 10)
+      day: dateToString(new Date(it[tsIndex] as number))
     }))
 
     dailyItems.push(...lastFetched)
