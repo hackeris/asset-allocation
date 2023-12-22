@@ -12,7 +12,9 @@ function alignAssetsInternal(assets: AssetInfo[]): AssetInfo[] {
       const asset = assets[j]
       const to = result[j]
       to.days.push(day)
-      if (day < asset.days[c]) {
+      if(c === asset.days.length) {
+        to.dailyReturns.push(0)
+      } else if (day < asset.days[c]) {
         to.dailyReturns.push(0)
       } else if (day === asset.days[c]) {
         to.dailyReturns.push(asset.dailyReturns[c])
