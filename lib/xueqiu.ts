@@ -1,14 +1,23 @@
 import axios from "axios";
 
-interface XueqiuResponse {
+interface DailyResponse {
   data: {
     column: string[],
     item: any[][]
   }
 }
 
+interface QuoteResponse {
+  data: {
+    quote: {
+      name: string
+    }
+  }
+}
+
 type AssetInfo = {
   symbol: string,
+  name: string,
   dailyReturns: number[],
   days: string[]
 }
@@ -25,22 +34,33 @@ function dateToString(d: Date): string {
 
 const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Edg/117.0.2045.43'
 
-async function getDailyLine(symbol: string): Promise<AssetInfo> {
-  const homeResponse = await axios.get(
-    'https://xueqiu.com',
+async function getName(symbol: string, referer: string, cookie: string): Promise<string> {
+
+  const options: { [key: string]: any } = {
+    symbol,
+    extend: 'detail'
+  }
+
+  const url = `https://stock.xueqiu.com/v5/stock/quote.json?${new URLSearchParams(options).toString()}`
+  const response = await axios.get(
+    url,
     {
       headers: {
         'User-Agent': userAgent,
-        'Host': 'xueqiu.com',
-        'Accept-Encoding': 'gzip'
+        'Accept-Encoding': 'gzip',
+        'Referer': referer,
+        'Cookie': cookie
       }
     })
 
-  const setCookie = homeResponse.headers['set-cookie'] || [];
-  const cookie = setCookie.map(it => it.split(';')[0]).join('; ')
-  const referer = 'https://xueqiu.com/S/' + symbol
+  const body = response.data as QuoteResponse;
+  const data = body.data
 
-  let dailyItems = []
+  return data.quote.name
+}
+
+async function getDailyItems(symbol: string, referer: string, cookie: string) {
+  const dailyItems = []
   let begin = new Date().getTime()
   while (true) {
     const options: { [key: string]: any } = {
@@ -63,7 +83,7 @@ async function getDailyLine(symbol: string): Promise<AssetInfo> {
         }
       })
 
-    const body = response.data as XueqiuResponse;
+    const body = response.data as DailyResponse;
     const data = body.data
 
     const tsIndex = data.column.indexOf('timestamp')
@@ -83,9 +103,31 @@ async function getDailyLine(symbol: string): Promise<AssetInfo> {
     begin = data.item[0][tsIndex] - 86400 * 1000
   }
 
-  dailyItems = dailyItems.sort((a, b) => a.day.localeCompare(b.day))
+  return dailyItems.sort((a, b) => a.day.localeCompare(b.day))
+}
+
+async function getDailyLine(symbol: string): Promise<AssetInfo> {
+  const homeResponse = await axios.get(
+    'https://xueqiu.com',
+    {
+      headers: {
+        'User-Agent': userAgent,
+        'Host': 'xueqiu.com',
+        'Accept-Encoding': 'gzip'
+      }
+    })
+
+  const setCookie = homeResponse.headers['set-cookie'] || [];
+  const cookie = setCookie.map(it => it.split(';')[0]).join('; ')
+  const referer = 'https://xueqiu.com/S/' + symbol
+
+  const dailyItems = await getDailyItems(symbol, referer, cookie);
+
+  const name = await getName(symbol, referer, cookie);
+
   return {
     symbol,
+    name,
     dailyReturns: dailyItems.map(it => it.dailyReturn),
     days: dailyItems.map(it => it.day)
   }

@@ -6,6 +6,7 @@ async function fetchAsset(symbol: string): Promise<AssetInfo> {
 
   return {
     symbol,
+    name: body.name,
     dailyReturns: body.dailyReturns,
     days: body.days
   }

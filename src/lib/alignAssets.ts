@@ -3,7 +3,7 @@ import AssetInfo from "./AssetInfo";
 
 function alignAssetsInternal(assets: AssetInfo[]): AssetInfo[] {
   const days = chain(assets).map(a => a.days).flatten().uniq().sort((a, b) => a.localeCompare(b)).value()
-  const result = assets.map((a): AssetInfo => ({symbol: a.symbol, days: [], dailyReturns: []}))
+  const result = assets.map((a): AssetInfo => ({symbol: a.symbol, name: a.name, days: [], dailyReturns: []}))
 
   const cursors = range(assets.length).map(i => 0)
   for (const day of days) {
@@ -12,7 +12,7 @@ function alignAssetsInternal(assets: AssetInfo[]): AssetInfo[] {
       const asset = assets[j]
       const to = result[j]
       to.days.push(day)
-      if(c === asset.days.length) {
+      if (c === asset.days.length) {
         to.dailyReturns.push(0)
       } else if (day < asset.days[c]) {
         to.dailyReturns.push(0)
@@ -45,6 +45,7 @@ function alignAssets(assets: AssetInfo[]): AssetInfo[] {
     const end = a.days.indexOf(endDay)
     return {
       symbol: a.symbol,
+      name: a.name,
       days: a.days.slice(begin, end + 1),
       dailyReturns: a.dailyReturns.slice(begin, end + 1)
     }

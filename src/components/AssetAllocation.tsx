@@ -16,7 +16,8 @@ type Prop = {}
 
 type AssetItem = {
   symbol: string,
-  weight: number
+  weight: number,
+  name: string
 }
 
 type State = {
@@ -41,9 +42,9 @@ class AssetAllocation extends React.Component<Prop, State> {
     },
     inputAsset: '',
     assets: [
-      {symbol: 'CSIH11001', weight: 0.80},
-      {symbol: 'SH518880', weight: 0.10},
-      {symbol: 'SH510880', weight: 0.10}
+      {symbol: 'CSIH11001', weight: 0.80, name: '中证全债'},
+      {symbol: 'SH518880', weight: 0.10, name: '黄金ETF'},
+      {symbol: 'SH510880', weight: 0.10, name: '红利ETF'}
     ],
     benchmark: 'SH511880',
     running: false,
@@ -64,11 +65,12 @@ class AssetAllocation extends React.Component<Prop, State> {
     this.setState(() => ({inputAsset: symbol}))
   }
 
-  onAddAsset = () => {
+  onAddAsset = async () => {
     const symbol = this.state.inputAsset.trim()
     if (symbol !== '') {
+      const info = await fetchAsset(symbol)
       this.setState((state) => {
-        const assets = [...state.assets, {symbol, weight: 0}];
+        const assets = [...state.assets, {symbol, weight: 0, name: info.name}];
         return {inputAsset: '', assets};
       })
     }
@@ -118,7 +120,8 @@ class AssetAllocation extends React.Component<Prop, State> {
         result,
         assets: result.assets.map((a, i) => ({
           symbol: a.symbol,
-          weight: result.last[i]
+          weight: result.last[i],
+          name: a.name
         })),
         running: false
       }))
@@ -151,7 +154,18 @@ class AssetAllocation extends React.Component<Prop, State> {
       {
         title: '代码',
         dataIndex: 'symbol',
-        key: 'symbol'
+        key: 'symbol',
+        render: (value) => {
+          return value
+        }
+      },
+      {
+        title: '名称',
+        dataIndex: 'name',
+        key: 'name',
+        render: (value, item) => {
+          return <a href={'https://xueqiu.com/S/' + item.symbol} target="_blank">{value}</a>
+        }
       },
       {
         title: '权重',

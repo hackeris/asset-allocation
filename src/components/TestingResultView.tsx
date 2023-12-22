@@ -20,7 +20,7 @@ class TestingResultView extends React.Component<Prop, any> {
 
     const {
       annualized, volatility, sharpe,
-      days, series, benchmark,
+      days, series, benchmark, benchmarkName,
       assets, holdings
     } = result
 
@@ -33,7 +33,7 @@ class TestingResultView extends React.Component<Prop, any> {
       x: days,
       y: benchmark,
       mode: 'lines',
-      name: '基准'
+      name: benchmarkName
     }]
     const curveLayout = {
       title: '模拟收益',
@@ -48,7 +48,7 @@ class TestingResultView extends React.Component<Prop, any> {
       x: days,
       y: holdings.map(h => h[i]),
       stackgroup: 'one',
-      name: a.symbol
+      name: a.name
     }))
     const holdingLayout = {
       title: '历史持仓',
