@@ -1,17 +1,16 @@
 import React from "react";
-import type {RadioChangeEvent} from "antd"
+import {RadioChangeEvent, Select} from "antd"
 import type {ColumnsType} from 'antd/es/table'
-import {Radio, Divider, Space, Input, Button, Table, InputNumber} from "antd";
+import {Radio, Divider, Space, Button, Table, InputNumber} from "antd";
 import minimalVarianceOptimizer, {Options as MinimalVarianceOptionsValue} from '../lib/minimalVariance'
 import MinimalVarianceOptions from "./MinimalVarianceOptions";
 
 import fetchAsset from "../lib/fetchAsset";
 import AssetInfo from "../lib/AssetInfo";
-import backTesting, {TestingResult} from "../lib/backTesting";
+import backTesting, {TestingResult, Period} from "../lib/backTesting";
 import TestingResultView from "./TestingResultView";
 
 import './AssetAllocation.css'
-import Search from "antd/es/input/Search";
 import AutoComplete from "antd/es/auto-complete";
 import searchAsset from "../lib/searchAsset";
 
@@ -27,6 +26,7 @@ type State = {
   method: string,
   assetSearch: string,
   assetLoading: boolean,
+  period: Period,
   searchCandidates: { value: string; label: string }[],
   options: MinimalVarianceOptionsValue,
   assets: AssetItem[],
@@ -34,6 +34,12 @@ type State = {
   running: boolean,
   result: TestingResult | null
 }
+
+const periodOptions = [
+  {value: 'quarterly', label: '季度'},
+  {value: 'semi_annually', label: '半年度'},
+  {value: 'annually', label: '年度'}
+]
 
 class AssetAllocation extends React.Component<Prop, State> {
 
@@ -45,6 +51,7 @@ class AssetAllocation extends React.Component<Prop, State> {
       turnoverConstraint: 0.10,
       back: 60
     },
+    period: 'quarterly',
     assetSearch: '',
     assetLoading: false,
     searchCandidates: [],
@@ -126,11 +133,16 @@ class AssetAllocation extends React.Component<Prop, State> {
     await this.runBackTesting(benchmark)
   }
 
+  onPeriodSelected = (e: RadioChangeEvent) => {
+    const period = e.target.value
+    this.setState(() => ({period: period as Period}))
+  }
+
   runBackTesting = async (benchmark: string) => {
 
     this.setState(() => ({running: true}))
 
-    const {assets, method, options} = this.state
+    const {assets, method, period, options} = this.state
 
     try {
       const assetsInfo = await Promise.all(
@@ -140,19 +152,18 @@ class AssetAllocation extends React.Component<Prop, State> {
 
       let actualMethod: (assets: AssetInfo[], day: string) => number[]
       if (method === 'manual_specified') {
-        const weights = assets.map(a => a.weight)
-        actualMethod = () => weights
+        actualMethod = () => assets.map(a => a.weight)
       } else {
         actualMethod = minimalVarianceOptimizer(options)
       }
 
-      const result = backTesting(assetsInfo, benchmarkInfo, actualMethod, options)
+      const result = backTesting(assetsInfo, benchmarkInfo, actualMethod, period, options)
 
       this.setState(() => ({
         result,
         assets: result.assets.map((a, i) => ({
           symbol: a.symbol,
-          weight: result.last[i],
+          weight: result.latest[i],
           name: a.name
         })),
         running: false
@@ -170,18 +181,19 @@ class AssetAllocation extends React.Component<Prop, State> {
 
     const {
       method, options, benchmark,
+      period,
       assetSearch, assetLoading, searchCandidates,
       assets,
       result, running
     } = this.state;
 
-    let maybeOptions;
+    let methodOptions;
     if (method === 'minimal_variance') {
-      maybeOptions = (
+      methodOptions = (
         <MinimalVarianceOptions value={options} onOptionsChange={this.onMinimalVarianceOptionsChange}/>
       )
     } else {
-      maybeOptions = <></>
+      methodOptions = <></>
     }
 
     const assetColumns: ColumnsType<AssetItem> = [
@@ -235,7 +247,19 @@ class AssetAllocation extends React.Component<Prop, State> {
         <Radio value={'manual_specified'}>固定比例</Radio>
       </Radio.Group>
 
-      {maybeOptions}
+      {methodOptions}
+
+      <Divider orientation="left" plain>
+        策略周期
+      </Divider>
+
+      <Radio.Group
+        options={periodOptions}
+        onChange={this.onPeriodSelected}
+        value={period}
+        optionType="button"
+        buttonStyle="solid"
+      />
 
       <Divider orientation="left" plain>
         选择资产

@@ -72,9 +72,9 @@ async function search(keyword: string) {
   const body = response.data as SearchResponse;
   const data = body.data
 
-  // 13-etf/26-CSI/12-index
+  // 13-etf/26-CSI/12-index/4-USetf
   return data
-    .filter(el => el.stock_type === 13 || el.stock_type === 26 || el.stock_type === 12)
+    .filter(el => el.stock_type === 13 || el.stock_type === 26 || el.stock_type === 12 || el.stock_type === 4)
     .filter(el => el.state === 1)
     .map(el => ({symbol: el.code, name: el.query}))
 }

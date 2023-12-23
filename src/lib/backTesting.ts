@@ -4,57 +4,86 @@ import alignAssets from './alignAssets'
 import covariance from 'compute-covariance'
 import AssetInfo from "./AssetInfo";
 import {Options as MinVarOptions} from "./minimalVariance";
+import {annualize, cumulative, sharpe, volatility} from "./statistics";
+import {historicalRiskModel, RiskAnalysis} from "./riskAnalysis";
+
+interface Performance {
+  days: string[],
+  dailyReturns: number[],
+  accumulativeReturns: number[],
+  annualized: number,
+  sharpe: number,
+  volatility: number
+}
 
 export interface TestingResult {
   days: string[],
   assets: AssetInfo[],
   holdings: number[][],
-  dailyReturns: number[],
-  series: number[],
+  profolio: Performance,
+  benchmark: Performance,
   benchmarkName: string,
-  benchmark: number[],
-  annualized: number,
-  sharpe: number,
-  volatility: number,
-  last: number[]
+  latest: number[],
+  risk: RiskAnalysis
 }
 
-function cumulative(returns: number[]): number[] {
-  const result = [returns[0]]
-  for (let i = 1; i < returns.length; i++) {
-    result.push((result[result.length - 1] + 1) * (returns[i] + 1) - 1)
+export type Period = 'quarterly' | 'semi_annually' | 'annually'
+
+function shouldRebalance(i: number, period: Period): boolean {
+  switch (period) {
+    case "quarterly":
+      return i % 53 === 0;
+    case "semi_annually":
+      return i % 126 === 0;
+    case "annually":
+      return i % 252 === 0;
   }
-  return result
 }
 
-function annualize(returns: number[]): number {
-  const cum = returns.map(r => 1 + r).reduce((a, b) => a * b, 1.0)
-  return Math.pow(cum, 252 / returns.length) - 1
-}
+function slice(result: TestingResult, start: number): TestingResult {
 
-function variance(returns: number[]): number {
-  const cov = covariance([returns])
-  return cov[0][0]
-}
+  const days = result.days.slice(start)
+  const assets = result.assets.map(a => ({
+    name: a.name,
+    symbol: a.symbol,
+    dailyReturns: a.dailyReturns.slice(start),
+    days: a.days.slice(start)
+  }))
+  const holdings = [assets.map(a => 0), ...result.holdings.slice(start + 1)]
 
-function std(returns: number[]): number {
-  const v = variance(returns)
-  return Math.sqrt(v)
-}
+  const dailyReturns = [0, ...result.profolio.dailyReturns.slice(start + 1)]
+  const benchmarkDailyReturns = [0, ...result.benchmark.dailyReturns.slice(start + 1)]
 
-function sharpe(returns: number[]): number {
-  const s = std(returns)
-  return returns.reduce((a, b) => a + b, 0.0) / returns.length / s * Math.sqrt(252)
-}
-
-function volatility(returns: number[]): number {
-  const s = std(returns)
-  return s * Math.sqrt(252)
+  return {
+    days,
+    assets,
+    holdings,
+    profolio: {
+      days,
+      dailyReturns,
+      accumulativeReturns: cumulative(dailyReturns),
+      annualized: annualize(dailyReturns),
+      volatility: volatility(dailyReturns),
+      sharpe: sharpe(dailyReturns)
+    },
+    benchmark: {
+      days,
+      dailyReturns: benchmarkDailyReturns,
+      accumulativeReturns: cumulative(benchmarkDailyReturns),
+      annualized: annualize(benchmarkDailyReturns),
+      volatility: volatility(benchmarkDailyReturns),
+      sharpe: sharpe(benchmarkDailyReturns)
+    },
+    benchmarkName: result.benchmarkName,
+    latest: result.latest,
+    risk: result.risk
+  }
 }
 
 function backTesting(assets: AssetInfo[],
                      benchmark: AssetInfo,
                      weightMethod: (assets: AssetInfo[], day: string) => number[],
+                     period: Period,
                      options: MinVarOptions): TestingResult {
   //  align returns
   const aligned = alignAssets([benchmark, ...assets])
@@ -75,7 +104,7 @@ function backTesting(assets: AssetInfo[],
     returns.push(dailyReturn)
 
     let newHolding
-    if (di === 0 || di % 53 === 0) {
+    if (di === 0 || di === 20 || shouldRebalance(di, period)) {
       const maybeNewHolding = weightMethod(assets, days[di])
       const turnover = maybeNewHolding
         .map((h, i) => Math.abs(lastWeight[i] - h))
@@ -96,19 +125,33 @@ function backTesting(assets: AssetInfo[],
 
   const series = cumulative(returns)
 
-  return {
+  const lastWeights = weightMethod(assets, last(days) as string)
+  const risk = historicalRiskModel(lastWeights, assets, options.back)
+
+  return slice({
     days,
     assets,
     holdings,
-    dailyReturns: returns,
-    series,
     benchmarkName: benchmark.name,
-    benchmark: cumulative(benchmark.dailyReturns),
-    annualized: annualize(returns),
-    sharpe: sharpe(returns),
-    volatility: volatility(returns),
-    last: weightMethod(assets, last(days) as string)
-  }
+    profolio: {
+      days,
+      dailyReturns: returns,
+      accumulativeReturns: series,
+      annualized: annualize(returns),
+      sharpe: sharpe(returns),
+      volatility: volatility(returns),
+    },
+    benchmark: {
+      days,
+      dailyReturns: benchmark.dailyReturns,
+      accumulativeReturns: cumulative(benchmark.dailyReturns),
+      annualized: annualize(benchmark.dailyReturns),
+      sharpe: sharpe(benchmark.dailyReturns),
+      volatility: volatility(benchmark.dailyReturns)
+    },
+    latest: lastWeights,
+    risk
+  }, 20)
 }
 
 export default backTesting
