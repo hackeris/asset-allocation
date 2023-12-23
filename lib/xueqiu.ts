@@ -19,6 +19,14 @@ interface SearchResponse {
   data: { code: string, query: string, stock_type: number, state: number }[]
 }
 
+interface FundResponse {
+  data: { fd_name: string, fd_full_name: string }
+}
+
+interface FundDailyResponse {
+  data: { fund_nav_growth: { date: string, nav: string, percentage: string | null, value: string }[] }
+}
+
 type AssetInfo = {
   symbol: string,
   name: string,
@@ -53,6 +61,24 @@ async function getXueqiuCookie() {
   return setCookie.map(it => it.split(';')[0]).join('; ');
 }
 
+async function getDanjuanCookie() {
+  const homeResponse = await axios.get(
+    'https://danjuanfunds.com/',
+    {
+      headers: {
+        'User-Agent': userAgent,
+        'Host': 'danjuanfunds.com',
+        'Accept-Encoding': 'gzip'
+      }
+    })
+
+  const setCookie = homeResponse.headers['set-cookie'] || [];
+  return setCookie.map(it => it.split(';')[0]).join('; ');
+}
+
+// 13-etf/26-CSI/12-index/4-USetf/23-fund
+const STOCK_TYPES = [13, 26, 12, 4, 23]
+
 async function search(keyword: string) {
 
   const cookie = await getXueqiuCookie();
@@ -72,14 +98,64 @@ async function search(keyword: string) {
   const body = response.data as SearchResponse;
   const data = body.data
 
-  // 13-etf/26-CSI/12-index/4-USetf
+  // 13-etf/26-CSI/12-index/4-USetf/23-fund
   return data
-    .filter(el => el.stock_type === 13 || el.stock_type === 26 || el.stock_type === 12 || el.stock_type === 4)
+    .filter(el => STOCK_TYPES.indexOf(el.stock_type) >= 0)
     .filter(el => el.state === 1)
     .map(el => ({symbol: el.code, name: el.query}))
 }
 
-async function getName(symbol: string, referer: string, cookie: string): Promise<string> {
+async function getFundName(symbol: string, cookie: string): Promise<string> {
+
+  const code = symbol.slice(1)
+
+  const url = 'https://danjuanfunds.com/djapi/fund/270002'
+  const response = await axios.get(
+    url,
+    {
+      headers: {
+        'User-Agent': userAgent,
+        'Accept-Encoding': 'gzip',
+        'Referer': `https://danjuanfunds.com/funding/${code}`,
+        'Cookie': cookie
+      }
+    })
+
+  const body = response.data as FundResponse;
+  const data = body.data
+
+  return data.fd_name
+}
+
+async function getFundDailyReturns(symbol: string, cookie: string) {
+
+  const code = symbol.slice(1)
+  const url = `https://danjuanfunds.com/djapi/fund/growth/${code}?day=all`
+  const response = await axios.get(
+    url,
+    {
+      headers: {
+        'User-Agent': userAgent,
+        'Accept-Encoding': 'gzip',
+        'Referer': `https://danjuanfunds.com/funding/${code}`,
+        'Cookie': cookie
+      }
+    })
+
+  const body = response.data as FundDailyResponse;
+  const data = body.data
+
+  return data.fund_nav_growth.map((it, i) => {
+    const dailyReturn = i === 0 ? 0
+      : (parseFloat(it.value) + 1) / (parseFloat(data.fund_nav_growth[i - 1].value) + 1) - 1;
+    return ({
+      dailyReturn,
+      day: it.date
+    });
+  })
+}
+
+async function getName(symbol: string, cookie: string): Promise<string> {
 
   const options: { [key: string]: any } = {
     symbol,
@@ -93,7 +169,7 @@ async function getName(symbol: string, referer: string, cookie: string): Promise
       headers: {
         'User-Agent': userAgent,
         'Accept-Encoding': 'gzip',
-        'Referer': referer,
+        'Referer': `https://xueqiu.com/S/${symbol}`,
         'Cookie': cookie
       }
     })
@@ -104,7 +180,8 @@ async function getName(symbol: string, referer: string, cookie: string): Promise
   return data.quote.name
 }
 
-async function getDailyItems(symbol: string, referer: string, cookie: string) {
+async function getDailyReturns(symbol: string, cookie: string) {
+
   const dailyItems = []
   let begin = new Date().getTime()
   while (true) {
@@ -123,7 +200,7 @@ async function getDailyItems(symbol: string, referer: string, cookie: string) {
         headers: {
           'User-Agent': userAgent,
           'Accept-Encoding': 'gzip',
-          'Referer': referer,
+          'Referer': `https://xueqiu.com/S/${symbol}`,
           'Cookie': cookie
         }
       })
@@ -153,17 +230,26 @@ async function getDailyItems(symbol: string, referer: string, cookie: string) {
 
 async function getAssetDetail(symbol: string): Promise<AssetInfo> {
 
-  const cookie = await getXueqiuCookie();
-  const referer = 'https://xueqiu.com/S/' + symbol
-
-  const name = await getName(symbol, referer, cookie);
-  const dailyItems = await getDailyItems(symbol, referer, cookie);
-
-  return {
-    symbol,
-    name,
-    dailyReturns: dailyItems.map(it => it.dailyReturn),
-    days: dailyItems.map(it => it.day)
+  if (symbol.startsWith("F")) {
+    const cookie = await getDanjuanCookie();
+    const name = await getFundName(symbol, cookie);
+    const dailyItems = await getFundDailyReturns(symbol, cookie)
+    return {
+      symbol,
+      name,
+      dailyReturns: dailyItems.map(it => it.dailyReturn),
+      days: dailyItems.map(it => it.day)
+    }
+  } else {
+    const cookie = await getXueqiuCookie();
+    const name = await getName(symbol, cookie);
+    const dailyItems = await getDailyReturns(symbol, cookie);
+    return {
+      symbol,
+      name,
+      dailyReturns: dailyItems.map(it => it.dailyReturn),
+      days: dailyItems.map(it => it.day)
+    }
   }
 }
 

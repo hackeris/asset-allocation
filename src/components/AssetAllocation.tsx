@@ -267,8 +267,9 @@ class AssetAllocation extends React.Component<Prop, State> {
 
       <Space.Compact>
         <AutoComplete
-          style={{width: 200}}
+          style={{width: 300}}
           value={assetSearch}
+          disabled={assetLoading}
           options={searchCandidates}
           onSelect={this.onAddAsset}
           onSearch={this.onInputAssetSearch}
