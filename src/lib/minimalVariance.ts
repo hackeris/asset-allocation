@@ -22,6 +22,24 @@ function pretend(array: number[][] | number[]) {
   return array
 }
 
+function round(weights: number[]): number[] {
+  if (weights.length <= 0) {
+    return weights
+  }
+
+  let min = 0;
+  for (let i = 0; i < weights.length; i += 1) {
+    if (weights[i] < weights[min]) min = i;
+  }
+
+  const rounded = weights.map(v => Math.round(v * 100) / 100)
+
+  const sum = rounded.reduce((a, b) => a + b, 0)
+  rounded[min] -= (sum - 1.0)
+
+  return rounded
+}
+
 function minimalVarianceOptimizer(options: Options) {
   const {minWeight, maxWeight} = options
   return (assets: AssetInfo[], day: string): number[] => {
@@ -56,7 +74,7 @@ function minimalVarianceOptimizer(options: Options) {
     ) as number[]
 
     const result = qp.solveQP(Dmat, dvec, Amat, bvec, 1)
-    return result.solution.slice(1)
+    return round(result.solution.slice(1));
   }
 }
 

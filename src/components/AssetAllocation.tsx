@@ -11,6 +11,9 @@ import backTesting, {TestingResult} from "../lib/backTesting";
 import TestingResultView from "./TestingResultView";
 
 import './AssetAllocation.css'
+import Search from "antd/es/input/Search";
+import AutoComplete from "antd/es/auto-complete";
+import searchAsset from "../lib/searchAsset";
 
 type Prop = {}
 
@@ -22,7 +25,9 @@ type AssetItem = {
 
 type State = {
   method: string,
-  inputAsset: string,
+  assetSearch: string,
+  assetLoading: boolean,
+  searchCandidates: { value: string; label: string }[],
   options: MinimalVarianceOptionsValue,
   assets: AssetItem[],
   benchmark: string,
@@ -40,7 +45,9 @@ class AssetAllocation extends React.Component<Prop, State> {
       turnoverConstraint: 0.10,
       back: 60
     },
-    inputAsset: '',
+    assetSearch: '',
+    assetLoading: false,
+    searchCandidates: [],
     assets: [
       {symbol: 'CSIH11001', weight: 0.80, name: '中证全债'},
       {symbol: 'SH518880', weight: 0.10, name: '黄金ETF'},
@@ -60,19 +67,39 @@ class AssetAllocation extends React.Component<Prop, State> {
     this.setState(() => ({options}))
   }
 
-  onInputAssetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const symbol: string = e.target.value
-    this.setState(() => ({inputAsset: symbol}))
+  onInputAssetSearch = async (search: string) => {
+    this.setState(() => ({assetSearch: search}))
+    if (search !== '') {
+      const candidates = await searchAsset(search);
+      this.setState(() => ({
+        searchCandidates: candidates.map(a =>
+          ({value: a.symbol, label: `${a.name}（${a.symbol}）`}))
+      }))
+    } else {
+      this.setState(() => ({
+        searchCandidates: []
+      }))
+    }
   }
 
-  onAddAsset = async () => {
-    const symbol = this.state.inputAsset.trim()
-    if (symbol !== '') {
-      const info = await fetchAsset(symbol)
-      this.setState((state) => {
-        const assets = [...state.assets, {symbol, weight: 0, name: info.name}];
-        return {inputAsset: '', assets};
-      })
+  onAddAsset = async (symbol: string) => {
+
+    this.setState(() => ({assetSearch: ''}))
+
+    if (symbol !== '' && this.state.assets.findIndex(a => a.symbol === symbol) < 0) {
+
+      this.setState(() =>
+        ({assetLoading: true, searchCandidates: []}))
+      try {
+        const info = await fetchAsset(symbol)
+        this.setState((state) => {
+          const assets = [...state.assets, {symbol, weight: 0, name: info.name}];
+          return {assets, assetLoading: false};
+        })
+      } catch (e) {
+        alert('获取' + symbol + '失败')
+        this.setState(() => ({assetLoading: false}))
+      }
     }
   }
 
@@ -94,11 +121,16 @@ class AssetAllocation extends React.Component<Prop, State> {
     }
   }
 
-  runBackTesting = async () => {
+  onBenchmarkChange = async (benchmark: string) => {
+    this.setState(() => ({benchmark}))
+    await this.runBackTesting(benchmark)
+  }
+
+  runBackTesting = async (benchmark: string) => {
 
     this.setState(() => ({running: true}))
 
-    const {assets, benchmark, method, options} = this.state
+    const {assets, method, options} = this.state
 
     try {
       const assetsInfo = await Promise.all(
@@ -137,7 +169,9 @@ class AssetAllocation extends React.Component<Prop, State> {
   render() {
 
     const {
-      method, options, inputAsset, assets,
+      method, options, benchmark,
+      assetSearch, assetLoading, searchCandidates,
+      assets,
       result, running
     } = this.state;
 
@@ -198,7 +232,7 @@ class AssetAllocation extends React.Component<Prop, State> {
         onChange={this.onModelChange}
         value={this.state.method}>
         <Radio value={'minimal_variance'}>风险最小化</Radio>
-        <Radio value={'manual_specified'}>手动指定</Radio>
+        <Radio value={'manual_specified'}>固定比例</Radio>
       </Radio.Group>
 
       {maybeOptions}
@@ -207,9 +241,15 @@ class AssetAllocation extends React.Component<Prop, State> {
         选择资产
       </Divider>
 
-      <Space.Compact style={{width: '200px'}}>
-        <Input placeholder="输入资产的代码" value={inputAsset} onChange={this.onInputAssetChange}/>
-        <Button type="primary" onClick={this.onAddAsset}>添加</Button>
+      <Space.Compact>
+        <AutoComplete
+          style={{width: 200}}
+          value={assetSearch}
+          options={searchCandidates}
+          onSelect={this.onAddAsset}
+          onSearch={this.onInputAssetSearch}
+          placeholder="在此搜索并添加资产"
+        />
       </Space.Compact>
 
       <Table dataSource={assets} columns={assetColumns}
@@ -220,9 +260,9 @@ class AssetAllocation extends React.Component<Prop, State> {
       </Divider>
 
       <Button type="primary" style={{float: "right"}}
-              onClick={this.runBackTesting} loading={running}>模拟</Button>
+              onClick={() => this.runBackTesting(benchmark)} loading={running}>模拟</Button>
 
-      <TestingResultView result={result}/>
+      <TestingResultView result={result} onBenchmarkChange={this.onBenchmarkChange}/>
     </div>)
   }
 }

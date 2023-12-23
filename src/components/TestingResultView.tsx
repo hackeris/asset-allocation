@@ -3,12 +3,27 @@ import {TestingResult} from "../lib/backTesting";
 import Plot from 'react-plotly.js'
 
 import './TestingResultView.css'
+import {Select} from "antd";
+import * as Plotly from "plotly.js";
 
 type Prop = {
-  result: TestingResult | null
+  result: TestingResult | null,
+  onBenchmarkChange: (symbol: string) => any
 }
 
 class TestingResultView extends React.Component<Prop, any> {
+
+  onBenchmarkSelected = (symbol: string) => {
+    this.props.onBenchmarkChange(symbol)
+  }
+
+  onHoldingClicked = (e: Readonly<Plotly.LegendClickEvent>): boolean => {
+    const i = e.curveNumber
+    const asset = this.props.result?.assets[i]
+    const symbol = asset?.symbol
+    window.open(`https://xueqiu.com/S/${symbol}`)
+    return false
+  }
 
   render() {
 
@@ -28,15 +43,27 @@ class TestingResultView extends React.Component<Prop, any> {
       x: days,
       y: series,
       mode: 'lines',
-      name: '组合'
+      name: '组合',
+      opacity: 0.9,
+      line: {
+        width: 3
+      }
     }, {
       x: days,
       y: benchmark,
       mode: 'lines',
-      name: benchmarkName
+      name: benchmarkName,
+      opacity: 0.7,
+      line: {
+        dash: 'dashdot',
+        width: 2
+      }
     }]
     const curveLayout = {
-      title: '模拟收益',
+      title: {
+        text: '模拟收益',
+        font: {size: 15}
+      },
       yaxis: {tickformat: '.2%', tickfont: {size: 10}},
       xaxis: {tickformat: '%Y-%m', hoverformat: '%Y-%m-%d'},
       margin: {t: 30, b: 40, l: 50, r: 20},
@@ -51,7 +78,10 @@ class TestingResultView extends React.Component<Prop, any> {
       name: a.name
     }))
     const holdingLayout = {
-      title: '历史持仓',
+      title: {
+        text: '历史持仓',
+        font: {size: 15}
+      },
       yaxis: {tickformat: '.2%', tickfont: {size: 10}},
       xaxis: {tickformat: '%Y-%m', hoverformat: '%Y-%m-%d'},
       margin: {t: 30, b: 40, l: 50, r: 20},
@@ -61,13 +91,29 @@ class TestingResultView extends React.Component<Prop, any> {
 
     return (
       <div>
-        <p className="summary">
+        <div className="summary">
           <span>年化：{(annualized * 100.0).toFixed(2)}%</span>
           <span>夏普比：{sharpe.toFixed(2)}</span>
           <span>波动率：{(volatility * 100.0).toFixed(2)}%</span>
-        </p>
-        <Plot className="curve" data={curveData} layout={curveLayout}/>
-        <Plot className="holding" data={holdingData} layout={holdingLayout}/>
+          <span>
+            比较基准：
+            <Select
+              defaultValue="SH511880"
+              style={{width: 120}}
+              onChange={this.onBenchmarkSelected}
+              options={[
+                {value: 'SH511880', label: '活期存款'},
+                {value: 'CSIH11001', label: '中证全债'},
+                {value: 'SH510300', label: '沪深300'}
+              ]}
+              size={'small'}
+            />
+          </span>
+        </div>
+        <Plot className="curve" data={curveData} layout={curveLayout} style={{marginTop: '15px'}}
+              config={{responsive: true}}/>
+        <Plot className="holding" data={holdingData} layout={holdingLayout} style={{marginTop: '5px'}}
+              onLegendClick={this.onHoldingClicked} config={{responsive: true}}/>
       </div>
     );
   }

@@ -2,7 +2,7 @@ import AssetInfo from "./AssetInfo";
 
 async function fetchAsset(symbol: string): Promise<AssetInfo> {
 
-  const body = await fetch(`/api/asset/${symbol}/daily`).then(res => res.json())
+  const body = await fetch(`/api/asset/${symbol}/detail`).then(res => res.json())
 
   return {
     symbol,

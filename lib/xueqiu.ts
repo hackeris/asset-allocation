@@ -15,6 +15,10 @@ interface QuoteResponse {
   }
 }
 
+interface SearchResponse {
+  data: { code: string, query: string, stock_type: number, state: number }[]
+}
+
 type AssetInfo = {
   symbol: string,
   name: string,
@@ -33,6 +37,47 @@ function dateToString(d: Date): string {
 }
 
 const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Edg/117.0.2045.43'
+
+async function getXueqiuCookie() {
+  const homeResponse = await axios.get(
+    'https://xueqiu.com',
+    {
+      headers: {
+        'User-Agent': userAgent,
+        'Host': 'xueqiu.com',
+        'Accept-Encoding': 'gzip'
+      }
+    })
+
+  const setCookie = homeResponse.headers['set-cookie'] || [];
+  return setCookie.map(it => it.split(';')[0]).join('; ');
+}
+
+async function search(keyword: string) {
+
+  const cookie = await getXueqiuCookie();
+
+  const url = `https://xueqiu.com/query/v1/suggest_stock.json?${new URLSearchParams({q: keyword}).toString()}`
+  const response = await axios.get(
+    url,
+    {
+      headers: {
+        'User-Agent': userAgent,
+        'Accept-Encoding': 'gzip',
+        'Referer': 'https://xueqiu.com/',
+        'Cookie': cookie
+      }
+    })
+
+  const body = response.data as SearchResponse;
+  const data = body.data
+
+  // 13-etf/26-CSI/12-index
+  return data
+    .filter(el => el.stock_type === 13 || el.stock_type === 26 || el.stock_type === 12)
+    .filter(el => el.state === 1)
+    .map(el => ({symbol: el.code, name: el.query}))
+}
 
 async function getName(symbol: string, referer: string, cookie: string): Promise<string> {
 
@@ -106,24 +151,13 @@ async function getDailyItems(symbol: string, referer: string, cookie: string) {
   return dailyItems.sort((a, b) => a.day.localeCompare(b.day))
 }
 
-async function getDailyLine(symbol: string): Promise<AssetInfo> {
-  const homeResponse = await axios.get(
-    'https://xueqiu.com',
-    {
-      headers: {
-        'User-Agent': userAgent,
-        'Host': 'xueqiu.com',
-        'Accept-Encoding': 'gzip'
-      }
-    })
+async function getAssetDetail(symbol: string): Promise<AssetInfo> {
 
-  const setCookie = homeResponse.headers['set-cookie'] || [];
-  const cookie = setCookie.map(it => it.split(';')[0]).join('; ')
+  const cookie = await getXueqiuCookie();
   const referer = 'https://xueqiu.com/S/' + symbol
 
-  const dailyItems = await getDailyItems(symbol, referer, cookie);
-
   const name = await getName(symbol, referer, cookie);
+  const dailyItems = await getDailyItems(symbol, referer, cookie);
 
   return {
     symbol,
@@ -133,4 +167,4 @@ async function getDailyLine(symbol: string): Promise<AssetInfo> {
   }
 }
 
-export default {getDailyLine}
+export default {getAssetDetail, search}
