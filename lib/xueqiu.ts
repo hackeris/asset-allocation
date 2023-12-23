@@ -109,7 +109,7 @@ async function getFundName(symbol: string, cookie: string): Promise<string> {
 
   const code = symbol.slice(1)
 
-  const url = 'https://danjuanfunds.com/djapi/fund/270002'
+  const url = `https://danjuanfunds.com/djapi/fund/${code}`
   const response = await axios.get(
     url,
     {
