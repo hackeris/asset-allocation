@@ -1,6 +1,8 @@
-# Asset allocation
+# 资产配置
 
-> Asset allocation
+资产配置工具，用于进行资产配置的模拟
+
+![image](./docs/screenshot.png)
 
 ## Dependencies
 
