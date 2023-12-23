@@ -267,13 +267,13 @@ class AssetAllocation extends React.Component<Prop, State> {
 
       <Space.Compact>
         <AutoComplete
-          style={{width: 300}}
+          style={{width: 400}}
           value={assetSearch}
           disabled={assetLoading}
           options={searchCandidates}
           onSelect={this.onAddAsset}
           onSearch={this.onInputAssetSearch}
-          placeholder="在此搜索并添加资产"
+          placeholder="在此搜索基金并添加，例如 510050、300ETF、纯债"
         />
       </Space.Compact>
 
