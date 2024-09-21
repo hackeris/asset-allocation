@@ -56,7 +56,7 @@ class AssetAllocation extends React.Component<Prop, State> {
     assetLoading: false,
     searchCandidates: [],
     assets: [
-      {symbol: 'CSIH11001', weight: 0.80, name: '中证全债'},
+      {symbol: 'F161119', weight: 0.80, name: '中债综合'},
       {symbol: 'SH518880', weight: 0.10, name: '黄金ETF'},
       {symbol: 'SH510880', weight: 0.10, name: '红利ETF'}
     ],
