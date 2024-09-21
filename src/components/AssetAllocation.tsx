@@ -164,7 +164,7 @@ class AssetAllocation extends React.Component<Prop, State> {
         assets: result.assets.map((a, i) => ({
           symbol: a.symbol,
           weight: result.latest[i],
-          name: a.name
+          name: assets[i].name
         })),
         running: false
       }))
