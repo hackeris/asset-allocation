@@ -75,14 +75,14 @@ const historyReturnColumns = [
 
 const benchmarkCandidates = [
   {value: 'SH511880', label: '活期存款'},
-  {value: 'CSIH11001', label: '中证全债'},
   {value: 'SH000012', label: '国债指数'},
   {value: 'CSIH11009', label: '中债综合'},
-  {value: 'CSIH11015', label: '中证短债'},
   {value: 'SH000011', label: '基金指数'},
-  {value: 'SH518880', label: '黄金'},
   {value: 'SH510050', label: '上证50'},
-  {value: 'SH510300', label: '沪深300'}
+  {value: 'SH510300', label: '沪深300'},
+  {value: 'SH518880', label: '黄金'},
+  {value: 'CSIH11001', label: '中证全债'},
+  {value: 'CSIH11015', label: '中证短债'},
 ];
 
 function historyIntervalReturns(result: TestingResult) {
