@@ -5,7 +5,7 @@
   "author": "hackeris <hackeris@qq.com>",
   "private": true,
   "scripts": {
-    "start": "ts-node ./bin/www.ts",
+    "start": "ts-node server/www.ts",
     "dev": "cross-env PORT=8080 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

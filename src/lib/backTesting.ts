@@ -1,7 +1,6 @@
 import {last} from 'lodash'
 import alignAssets from './alignAssets'
 
-import covariance from 'compute-covariance'
 import AssetInfo from "./AssetInfo";
 import {Options as MinVarOptions} from "./minimalVariance";
 import {annualize, cumulative, sharpe, volatility} from "./statistics";

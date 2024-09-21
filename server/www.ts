@@ -2,7 +2,7 @@
 /**
  * Module dependencies.
  */
-import app from "../app";
+import app from "./app";
 import debug0 from "debug";
 import http from "http";
 import {AddressInfo} from "net";
