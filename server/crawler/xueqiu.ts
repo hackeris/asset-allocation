@@ -1,4 +1,8 @@
 import axios from "axios";
+import fs from 'fs/promises';
+import {getCookieByBrowser} from '../lib/cookie';
+import path from "path";
+import {Cookie} from "puppeteer";
 
 interface DailyResponse {
   data: {
@@ -45,20 +49,30 @@ function dateToString(d: Date): string {
 }
 
 const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Edg/117.0.2045.43'
+const cookieFile = path.join(process.cwd(), 'tmp/xueqiu_cookies.json');
+
+export async function initXueqiuCookie(): Promise<Cookie[]> {
+  const cookies = await getCookieByBrowser('https://xueqiu.com', '#app');
+  await fs.writeFile(cookieFile, JSON.stringify(cookies, null, 2));
+  return cookies;
+}
 
 async function getXueqiuCookie() {
-  const homeResponse = await axios.get(
-    'https://xueqiu.com',
-    {
-      headers: {
-        'User-Agent': userAgent,
-        'Host': 'xueqiu.com',
-        'Accept-Encoding': 'gzip'
-      }
-    })
 
-  const setCookie = homeResponse.headers['set-cookie'] || [];
-  return setCookie.map(it => it.split(';')[0]).join('; ');
+  // @ts-ignore
+  const text: string = await fs.readFile(cookieFile, {flag: 'r'});
+  const existCookies: Cookie[] = JSON.parse(text);
+
+  const expire = existCookies.filter(c => c.expires && c.expires > 0)
+    .map(c => c.expires)
+    .reduce((a, b) => Math.min(a, b))
+  const nowSeconds = new Date().getTime() / 1000;
+  if (expire > nowSeconds) {
+    return existCookies.map(c => `${c.name}=${c.value}`).join('; ');
+  }
+
+  const cookies = await initXueqiuCookie();
+  return cookies.map(c => `${c.name}=${c.value}`).join('; ');
 }
 
 async function getDanjuanCookie() {
@@ -253,4 +267,4 @@ async function getAssetDetail(symbol: string): Promise<AssetInfo> {
   }
 }
 
-export default {getAssetDetail, search}
+export default {getAssetDetail, search, initXueqiuCookie}

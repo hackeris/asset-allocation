@@ -2,9 +2,12 @@ import express from "express";
 
 import NodeCache from "node-cache";
 
-import xueqiu from "./lib/xueqiu";
+import xueqiu from "./crawler/xueqiu";
 
 const router = express.Router()
+
+// noinspection JSIgnoredPromiseFromCall
+xueqiu.initXueqiuCookie()
 
 const cache = new NodeCache({stdTTL: 300, checkperiod: 120})
 router.get('/asset/:symbol/detail', async (req, res, next) => {
