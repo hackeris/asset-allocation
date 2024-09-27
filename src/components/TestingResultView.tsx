@@ -140,9 +140,8 @@ class TestingResultView extends React.Component<Prop, any> {
         mode: 'lines',
         name: '组合',
         opacity: 0.9,
-        line: {
-          width: 3
-        }
+        line: {width: 3},
+        hovertemplate: '%{x}<br>%{y:.2%}'
       },
       {
         x: days,
@@ -150,20 +149,15 @@ class TestingResultView extends React.Component<Prop, any> {
         mode: 'lines',
         name: benchmarkName,
         opacity: 0.6,
-        line: {
-          dash: 'dashdot',
-          width: 2
-        }
+        line: {dash: 'dashdot', width: 2},
+        hovertemplate: '%{x}<br>%{y:.2%}'
       }
     ]
     const curveLayout = {
-      title: {
-        text: '模拟收益',
-        font: {size: 15}
-      },
-      yaxis: {tickformat: '.2%', tickfont: {size: 10}},
+      title: {},
+      yaxis: {tickformat: '.0%', tickfont: {size: 10}},
       xaxis: {tickformat: '%Y-%m', hoverformat: '%Y-%m-%d'},
-      margin: {t: 30, b: 40, l: 50, r: 20},
+      margin: {t: 10, b: 40, l: 40, r: 20},
       paper_bgcolor: 'rgba(0,0,0,0)',
       plot_bgcolor: 'rgba(0,0,0,0)',
       legend: {
@@ -186,16 +180,13 @@ class TestingResultView extends React.Component<Prop, any> {
       x: days,
       y: holdings.map(h => h[i]),
       stackgroup: 'one',
-      name: a.name
+      name: a.name,
+      hovertemplate: '%{x}<br>%{y:.2%}'
     }))
     const holdingLayout = {
-      title: {
-        text: '历史持仓',
-        font: {size: 15}
-      },
-      yaxis: {tickformat: '.2%', tickfont: {size: 10}},
+      yaxis: {tickformat: '.0%', tickfont: {size: 10}},
       xaxis: {tickformat: '%Y-%m', hoverformat: '%Y-%m-%d'},
-      margin: {t: 30, b: 40, l: 50, r: 20},
+      margin: {t: 10, b: 40, l: 40, r: 20},
       paper_bgcolor: 'rgba(0,0,0,0)',
       plot_bgcolor: 'rgba(0,0,0,0)'
     }
