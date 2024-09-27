@@ -1,5 +1,6 @@
 .mv-options {
     display: flex;
+    flex-wrap: wrap;
 }
 
 .mv-options-item {

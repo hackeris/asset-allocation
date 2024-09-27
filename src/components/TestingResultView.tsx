@@ -149,7 +149,7 @@ class TestingResultView extends React.Component<Prop, any> {
         y: benchmark.accumulativeReturns,
         mode: 'lines',
         name: benchmarkName,
-        opacity: 0.7,
+        opacity: 0.6,
         line: {
           dash: 'dashdot',
           width: 2
@@ -165,7 +165,12 @@ class TestingResultView extends React.Component<Prop, any> {
       xaxis: {tickformat: '%Y-%m', hoverformat: '%Y-%m-%d'},
       margin: {t: 30, b: 40, l: 50, r: 20},
       paper_bgcolor: 'rgba(0,0,0,0)',
-      plot_bgcolor: 'rgba(0,0,0,0)'
+      plot_bgcolor: 'rgba(0,0,0,0)',
+      legend: {
+        x: 0,
+        xanchor: "left" as ("auto" | "left" | "center" | "right"),
+        y: 1
+      }
     }
 
     const latestAllocation = latest.map((w, i) => ({
