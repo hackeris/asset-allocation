@@ -34,10 +34,17 @@ class MinimalVarianceOptions extends React.Component<Prop, State> {
       turnoverConstraint: weight
     })
   }
+  onBackDaysChange = (value: number | null) => {
+    const back = value || 60;
+    this.props.onOptionsChange({
+      ...this.props.value,
+      back
+    })
+  }
 
   render() {
 
-    const {minWeight, maxWeight, turnoverConstraint} = this.props.value;
+    const {minWeight, maxWeight, turnoverConstraint, back} = this.props.value;
 
     const minWeightPercent = minWeight * 100.0;
     const maxWeightPercent = maxWeight * 100.0;
@@ -59,6 +66,11 @@ class MinimalVarianceOptions extends React.Component<Prop, State> {
           <InputNumber prefix="换手限制：" suffix="%" style={{width: 130}} bordered={false}
                        value={turnoverConstraintPercent} size="middle"
                        min={0} max={100} onChange={this.onTurnoverConstraintChange}/>
+        </div>
+        <div className="mv-options-item">
+          <InputNumber prefix="模型回溯：" suffix="天" style={{width: 130}} bordered={false}
+                       value={back} size="middle" precision={0}
+                       min={0} max={250} onChange={this.onBackDaysChange}/>
         </div>
       </div>
     );

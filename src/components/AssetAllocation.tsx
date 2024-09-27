@@ -51,7 +51,7 @@ class AssetAllocation extends React.Component<Prop, State> {
       turnoverConstraint: 0.10,
       back: 60
     },
-    period: 'quarterly',
+    period: 'semi_annually',
     assetSearch: '',
     assetLoading: false,
     searchCandidates: [],
