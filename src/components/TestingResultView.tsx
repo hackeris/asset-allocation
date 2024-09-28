@@ -80,6 +80,7 @@ const benchmarkCandidates = [
   {value: 'SH000011', label: '基金指数'},
   {value: 'SH510050', label: '上证50'},
   {value: 'SH510300', label: '沪深300'},
+  {value: 'SH513500', label: '标普500'},
   {value: 'SH518880', label: '黄金'},
   {value: 'CSIH11001', label: '中证全债'},
   {value: 'CSIH11015', label: '中证短债'},
