@@ -81,7 +81,7 @@ export function gradientDescentOptimizer(
       return assets.map(a => 1.0 / assets.length)
     }
     const covStart = Math.max(dayIndex - (back || 60), 0)
-    const history = assets.map(a => a.dailyReturns.slice(covStart, dayIndex + 1))
+    const history = assets.map(a => a.dailyReturns.slice(covStart, dayIndex))
 
     const cov = covariance(history);
     const weights = gradientDescent(cov, objective, {

@@ -19,13 +19,14 @@ function pretend(array: number[][] | number[]) {
 function minimalVarianceOptimizer(options: Options) {
   const {minWeight, maxWeight} = options
   return (assets: AssetInfo[], day: string): number[] => {
+
     const dayIndex = assets[0].days.indexOf(day)
     if (dayIndex < 20) {
       return assets.map(a => 1.0 / assets.length)
     }
 
     const covStart = Math.max(dayIndex - (options.back || 60), 0)
-    const history = assets.map(a => a.dailyReturns.slice(covStart, dayIndex + 1))
+    const history = assets.map(a => a.dailyReturns.slice(covStart, dayIndex))
 
     const Dmat = pretend(
       covariance(history)
