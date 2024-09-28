@@ -265,7 +265,7 @@ class AssetAllocation extends React.Component<Prop, State> {
 
     return (<div className="asset-allocation">
       <Divider orientation="left" plain>
-        选择策略
+        选择模型
       </Divider>
       <Radio.Group
         optionType="button"
