@@ -104,9 +104,6 @@ function backTesting(assets: AssetInfo[],
 
     let newHolding
     if (di === 0 || di === 20 || shouldRebalance(di, period)) {
-
-      console.log('rebalace at', days[di])
-
       const maybeNewHolding = weightMethod(assets, days[di])
       const turnover = maybeNewHolding
         .map((h, i) => Math.abs(lastWeight[i] - h))

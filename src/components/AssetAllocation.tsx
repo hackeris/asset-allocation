@@ -158,10 +158,10 @@ class AssetAllocation extends React.Component<Prop, State> {
       if (method === 'minimal_variance') {
         actualMethod = minimalVarianceOptimizer(options)
       } else if (method === 'risk_parity') {
-        actualMethod = gradientDescentOptimizer(options, riskParityObjective)
+        actualMethod = gradientDescentOptimizer(riskParityObjective, options, {})
       } else if (method === 'complex_model') {
         const optimizer = riskParityAndMinimalVariance(0.1);
-        actualMethod = gradientDescentOptimizer(options, optimizer)
+        actualMethod = gradientDescentOptimizer(optimizer, options, {minIterate: 100})
       } else {
         actualMethod = () => assets.map(a => a.weight)
       }
@@ -273,7 +273,7 @@ class AssetAllocation extends React.Component<Prop, State> {
         onChange={this.onModelChange}
         value={this.state.method}>
         {models.map(item => (
-          <Popover content={item.hover}>
+          <Popover content={item.hover} key={item.value}>
             <Radio value={item.value}>{item.name}</Radio>
           </Popover>
         ))}
@@ -291,7 +291,7 @@ class AssetAllocation extends React.Component<Prop, State> {
         optionType="button"
         buttonStyle="solid">
         {periodOptions.map(item => (
-          <Popover content={item.hover}>
+          <Popover content={item.hover} key={item.value}>
             <Radio value={item.value}>{item.label}</Radio>
           </Popover>
         ))}

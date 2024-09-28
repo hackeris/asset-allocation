@@ -69,8 +69,9 @@ export function gradientDescent(
 }
 
 export function gradientDescentOptimizer(
+  objective: (weight: number[], cov: number[][]) => number,
   options: Options,
-  objective: (weight: number[], cov: number[][]) => number
+  gdOptions: Partial<GDOptions>
 ) {
   const {back} = options
   return (assets: AssetInfo[], day: string): number[] => {
@@ -84,8 +85,9 @@ export function gradientDescentOptimizer(
 
     const cov = covariance(history);
     const weights = gradientDescent(cov, objective, {
-      minWeight: options.minWeight,
-      maxWeight: options.maxWeight
+      ...gdOptions,
+      minWeight: options.minWeight || gdOptions.minWeight,
+      maxWeight: options.maxWeight || gdOptions.maxWeight
     });
     return round(weights);
   }
