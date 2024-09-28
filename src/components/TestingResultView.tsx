@@ -1,12 +1,12 @@
-import React from "react";
-import {TestingResult} from "../lib/backTesting";
+import React from "react"
+import {TestingResult} from "../lib/backTesting"
 import Plot from 'react-plotly.js'
 
 import './TestingResultView.css'
-import {Select, Table, Tabs} from "antd";
-import * as Plotly from "plotly.js";
-import {groupBy, last, zip} from "lodash";
-import {cumulative} from "../lib/statistics";
+import {Select, Table, Tabs} from "antd"
+import * as Plotly from "plotly.js"
+import {groupBy, last, zip} from "lodash"
+import {cumulative} from "../lib/statistics"
 
 type Prop = {
   result: TestingResult | null,
@@ -84,7 +84,7 @@ const benchmarkCandidates = [
   {value: 'SH518880', label: '黄金'},
   {value: 'CSIH11001', label: '中证全债'},
   {value: 'CSIH11015', label: '中证短债'},
-];
+]
 
 function historyIntervalReturns(result: TestingResult) {
 
@@ -94,8 +94,8 @@ function historyIntervalReturns(result: TestingResult) {
 
   return Object.keys(intervals).map(key => {
     const triples = intervals[key]
-    const profolio = last(cumulative(triples.map(t => t[1]) as number[])) as number;
-    const benchmark = last(cumulative(triples.map(t => t[2]) as number[])) as number;
+    const profolio = last(cumulative(triples.map(t => t[1]) as number[])) as number
+    const benchmark = last(cumulative(triples.map(t => t[2]) as number[])) as number
     return {
       interval: key,
       profolio,
@@ -175,7 +175,7 @@ class TestingResultView extends React.Component<Prop, any> {
     }))
     const latestAllocationTable = (
       <Table dataSource={latestAllocation} columns={latestAllocationColumns} rowKey={'symbol'}/>
-    );
+    )
 
     const holdingData = assets.map((a, i) => ({
       x: days,
@@ -194,13 +194,13 @@ class TestingResultView extends React.Component<Prop, any> {
     const holdingHistory = (
       <Plot className="holding" data={holdingData} layout={holdingLayout} style={{marginTop: '5px'}}
             onLegendClick={this.onHoldingClicked} config={{responsive: true}}/>
-    );
+    )
 
     const intervalReturns = historyIntervalReturns(result)
     const historyPerformance = (
       <Table dataSource={intervalReturns} columns={historyReturnColumns}
              pagination={{pageSize: 5}} rowKey={'interval'}/>
-    );
+    )
 
     const riskItems =
       risk.risks.map((v, i) => ({name: assets[i].name, risk: v}))
@@ -228,7 +228,7 @@ class TestingResultView extends React.Component<Prop, any> {
           </li>
         ))}
       </ul>
-    );
+    )
 
     return (
       <div>
@@ -281,7 +281,7 @@ class TestingResultView extends React.Component<Prop, any> {
           }
         ]}/>
       </div>
-    );
+    )
   }
 
 }

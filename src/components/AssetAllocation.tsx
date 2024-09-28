@@ -1,22 +1,22 @@
-import React from "react";
+import React from "react"
 import {RadioChangeEvent} from "antd"
 import type {ColumnsType} from 'antd/es/table'
-import {Radio, Divider, Space, Button, Table, InputNumber, Popover} from "antd";
-import AutoComplete from "antd/es/auto-complete";
+import {Radio, Divider, Space, Button, Table, InputNumber, Popover} from "antd"
+import AutoComplete from "antd/es/auto-complete"
 import './AssetAllocation.css'
 
 import minimalVarianceOptimizer from '../lib/minimalVariance'
 import {Options as OptimizerOptionsValue} from '../lib/modelCommon'
-import OptimizerOptions from "./OptimizerOptions";
+import OptimizerOptions from "./OptimizerOptions"
 
-import fetchAsset from "../lib/fetchAsset";
-import AssetInfo from "../lib/AssetInfo";
-import backTesting, {TestingResult, Period} from "../lib/backTesting";
-import TestingResultView from "./TestingResultView";
+import fetchAsset from "../lib/fetchAsset"
+import AssetInfo from "../lib/AssetInfo"
+import backTesting, {TestingResult, Period} from "../lib/backTesting"
+import TestingResultView from "./TestingResultView"
 
-import searchAsset from "../lib/searchAsset";
-import gradientDescentOptimizer from "../lib/gradientDescent";
-import riskParityObjective, {riskParityAndMinimalVariance} from "../lib/riskParity";
+import searchAsset from "../lib/searchAsset"
+import gradientDescentOptimizer from "../lib/gradientDescent"
+import riskParityObjective, {riskParityAndMinimalVariance} from "../lib/riskParity"
 
 type Prop = {}
 
@@ -81,7 +81,7 @@ class AssetAllocation extends React.Component<Prop, State> {
   onInputAssetSearch = async (search: string) => {
     this.setState(() => ({assetSearch: search}))
     if (search !== '') {
-      const candidates = await searchAsset(search);
+      const candidates = await searchAsset(search)
       this.setState(() => ({
         searchCandidates: candidates.map(a =>
           ({value: a.symbol, label: `${a.name}（${a.symbol}）`}))
@@ -104,8 +104,8 @@ class AssetAllocation extends React.Component<Prop, State> {
       try {
         const info = await fetchAsset(symbol)
         this.setState((state) => {
-          const assets = [...state.assets, {symbol, weight: 0, name: info.name}];
-          return {assets, assetLoading: false};
+          const assets = [...state.assets, {symbol, weight: 0, name: info.name}]
+          return {assets, assetLoading: false}
         })
       } catch (e) {
         alert('获取' + symbol + '失败')
@@ -118,7 +118,7 @@ class AssetAllocation extends React.Component<Prop, State> {
     const assets = [...this.state.assets]
     const target = assets.findIndex(it => it.symbol === symbol)
     if (target >= 0) {
-      assets[target] = {...assets[target], weight: value / 100.0};
+      assets[target] = {...assets[target], weight: value / 100.0}
     }
     this.setState(() => ({assets}))
   }
@@ -160,7 +160,7 @@ class AssetAllocation extends React.Component<Prop, State> {
       } else if (method === 'risk_parity') {
         actualMethod = gradientDescentOptimizer(riskParityObjective, options, {})
       } else if (method === 'complex_model') {
-        const optimizer = riskParityAndMinimalVariance(0.05);
+        const optimizer = riskParityAndMinimalVariance(0.05)
         actualMethod = gradientDescentOptimizer(optimizer, options, {minIterate: 200, learningRate: 0.01})
       } else {
         actualMethod = () => assets.map(a => a.weight)
@@ -194,9 +194,9 @@ class AssetAllocation extends React.Component<Prop, State> {
       assetSearch, assetLoading, searchCandidates,
       assets,
       result, running
-    } = this.state;
+    } = this.state
 
-    let methodOptions;
+    let methodOptions
     if (method !== 'manual_specified') {
       methodOptions = (
         <OptimizerOptions value={options} onOptionsChange={this.onOptimizerOptionsChange}/>
@@ -232,7 +232,7 @@ class AssetAllocation extends React.Component<Prop, State> {
             <InputNumber suffix="%" value={percent} min={0} max={100}
                          disabled={method !== 'manual_specified'} size="middle"
                          onChange={(v) => this.onAssetWeightChange(item.symbol, v as number)}/>
-          );
+          )
         }
       },
       {

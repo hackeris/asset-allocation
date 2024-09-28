@@ -1,4 +1,4 @@
-import AssetCandidate from "./AssetCandidate";
+import AssetCandidate from "./AssetCandidate"
 
 async function searchAsset(keyword: string): Promise<AssetCandidate[]> {
 

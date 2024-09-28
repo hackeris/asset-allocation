@@ -1,8 +1,8 @@
-import axios from "axios";
-import fs from 'fs/promises';
-import {getCookieByBrowser} from '../lib/cookie';
-import path from "path";
-import {Cookie} from "puppeteer";
+import axios from "axios"
+import fs from 'fs/promises'
+import {getCookieByBrowser} from '../lib/cookie'
+import path from "path"
+import {Cookie} from "puppeteer"
 
 interface DailyResponse {
   data: {
@@ -49,30 +49,30 @@ function dateToString(d: Date): string {
 }
 
 const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Edg/117.0.2045.43'
-const cookieFile = path.join(process.cwd(), 'tmp/xueqiu_cookies.json');
+const cookieFile = path.join(process.cwd(), 'tmp/xueqiu_cookies.json')
 
 export async function initXueqiuCookie(): Promise<Cookie[]> {
-  const cookies = await getCookieByBrowser('https://xueqiu.com', '#app');
-  await fs.writeFile(cookieFile, JSON.stringify(cookies, null, 2));
-  return cookies;
+  const cookies = await getCookieByBrowser('https://xueqiu.com', '#app')
+  await fs.writeFile(cookieFile, JSON.stringify(cookies, null, 2))
+  return cookies
 }
 
 async function getXueqiuCookie() {
 
   // @ts-ignore
-  const text: string = await fs.readFile(cookieFile, {flag: 'r'});
-  const existCookies: Cookie[] = JSON.parse(text);
+  const text: string = await fs.readFile(cookieFile, {flag: 'r'})
+  const existCookies: Cookie[] = JSON.parse(text)
 
   const expire = existCookies.filter(c => c.expires && c.expires > 0)
     .map(c => c.expires)
     .reduce((a, b) => Math.min(a, b))
-  const nowSeconds = new Date().getTime() / 1000;
+  const nowSeconds = new Date().getTime() / 1000
   if (expire > nowSeconds) {
-    return existCookies.map(c => `${c.name}=${c.value}`).join('; ');
+    return existCookies.map(c => `${c.name}=${c.value}`).join('; ')
   }
 
-  const cookies = await initXueqiuCookie();
-  return cookies.map(c => `${c.name}=${c.value}`).join('; ');
+  const cookies = await initXueqiuCookie()
+  return cookies.map(c => `${c.name}=${c.value}`).join('; ')
 }
 
 async function getDanjuanCookie() {
@@ -86,8 +86,8 @@ async function getDanjuanCookie() {
       }
     })
 
-  const setCookie = homeResponse.headers['set-cookie'] || [];
-  return setCookie.map(it => it.split(';')[0]).join('; ');
+  const setCookie = homeResponse.headers['set-cookie'] || []
+  return setCookie.map(it => it.split(';')[0]).join('; ')
 }
 
 // 13-etf/26-CSI/12-index/4-USetf/23-fund
@@ -95,7 +95,7 @@ const STOCK_TYPES = [13, 26, 12, 4, 23]
 
 async function search(keyword: string) {
 
-  const cookie = await getXueqiuCookie();
+  const cookie = await getXueqiuCookie()
 
   const url = `https://xueqiu.com/query/v1/suggest_stock.json?${new URLSearchParams({q: keyword}).toString()}`
   const response = await axios.get(
@@ -109,7 +109,7 @@ async function search(keyword: string) {
       }
     })
 
-  const body = response.data as SearchResponse;
+  const body = response.data as SearchResponse
   const data = body.data
 
   // 13-etf/26-CSI/12-index/4-USetf/23-fund
@@ -135,7 +135,7 @@ async function getFundName(symbol: string, cookie: string): Promise<string> {
       }
     })
 
-  const body = response.data as FundResponse;
+  const body = response.data as FundResponse
   const data = body.data
 
   return data.fd_name
@@ -156,16 +156,16 @@ async function getFundDailyReturns(symbol: string, cookie: string) {
       }
     })
 
-  const body = response.data as FundDailyResponse;
+  const body = response.data as FundDailyResponse
   const data = body.data
 
   return data.fund_nav_growth.map((it, i) => {
     const dailyReturn = i === 0 ? 0
-      : (parseFloat(it.value) + 1) / (parseFloat(data.fund_nav_growth[i - 1].value) + 1) - 1;
+      : (parseFloat(it.value) + 1) / (parseFloat(data.fund_nav_growth[i - 1].value) + 1) - 1
     return ({
       dailyReturn,
       day: it.date
-    });
+    })
   })
 }
 
@@ -188,7 +188,7 @@ async function getName(symbol: string, cookie: string): Promise<string> {
       }
     })
 
-  const body = response.data as QuoteResponse;
+  const body = response.data as QuoteResponse
   const data = body.data
 
   return data.quote.name
@@ -219,7 +219,7 @@ async function getDailyReturns(symbol: string, cookie: string) {
         }
       })
 
-    const body = response.data as DailyResponse;
+    const body = response.data as DailyResponse
     const data = body.data
 
     const tsIndex = data.column.indexOf('timestamp')
@@ -245,8 +245,8 @@ async function getDailyReturns(symbol: string, cookie: string) {
 async function getAssetDetail(symbol: string): Promise<AssetInfo> {
 
   if (symbol.startsWith("F")) {
-    const cookie = await getDanjuanCookie();
-    const name = await getFundName(symbol, cookie);
+    const cookie = await getDanjuanCookie()
+    const name = await getFundName(symbol, cookie)
     const dailyItems = await getFundDailyReturns(symbol, cookie)
     return {
       symbol,
@@ -255,9 +255,9 @@ async function getAssetDetail(symbol: string): Promise<AssetInfo> {
       days: dailyItems.map(it => it.day)
     }
   } else {
-    const cookie = await getXueqiuCookie();
-    const name = await getName(symbol, cookie);
-    const dailyItems = await getDailyReturns(symbol, cookie);
+    const cookie = await getXueqiuCookie()
+    const name = await getName(symbol, cookie)
+    const dailyItems = await getDailyReturns(symbol, cookie)
     return {
       symbol,
       name,

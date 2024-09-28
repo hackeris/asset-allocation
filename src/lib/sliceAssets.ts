@@ -1,4 +1,4 @@
-import AssetInfo from "./AssetInfo";
+import AssetInfo from "./AssetInfo"
 
 function sliceAssets(assets: AssetInfo[], start: string): AssetInfo[] {
 
@@ -11,7 +11,7 @@ function sliceAssets(assets: AssetInfo[], start: string): AssetInfo[] {
       dailyReturns: a.dailyReturns.slice(from),
       days: a.days.slice(from)
     }
-  });
+  })
 }
 
 export default sliceAssets

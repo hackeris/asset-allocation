@@ -1,5 +1,5 @@
 import {chain, range, last, first} from 'lodash'
-import AssetInfo from "./AssetInfo";
+import AssetInfo from "./AssetInfo"
 
 function alignAssetsInternal(assets: AssetInfo[]): AssetInfo[] {
   const days = chain(assets).map(a => a.days).flatten().uniq().sort((a, b) => a.localeCompare(b)).value()

@@ -1,4 +1,4 @@
-import AssetInfo from "./AssetInfo";
+import AssetInfo from "./AssetInfo"
 
 async function fetchAsset(symbol: string): Promise<AssetInfo> {
 

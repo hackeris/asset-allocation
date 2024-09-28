@@ -1,8 +1,8 @@
-import express from "express";
+import express from "express"
 
-import NodeCache from "node-cache";
+import NodeCache from "node-cache"
 
-import xueqiu from "./crawler/xueqiu";
+import xueqiu from "./crawler/xueqiu"
 
 const router = express.Router()
 
@@ -28,7 +28,7 @@ router.get('/asset/search', async (req, res) => {
 
   const keyword = req.query.keyword
 
-  const result = await xueqiu.search(keyword as string);
+  const result = await xueqiu.search(keyword as string)
 
   res.json(result)
 })

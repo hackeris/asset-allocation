@@ -1,4 +1,4 @@
-import covariance from "compute-covariance";
+import covariance from "compute-covariance"
 
 export function cumulative(returns: number[]): number[] {
   const result = [returns[0]]

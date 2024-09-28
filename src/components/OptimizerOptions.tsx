@@ -1,5 +1,5 @@
 import React from 'react'
-import {InputNumber} from 'antd';
+import {InputNumber} from 'antd'
 import {Options as OptimizerOptionsValue} from '../lib/modelCommon'
 import './OptimizerOptions.css'
 
@@ -14,28 +14,28 @@ type State = {}
 class OptimizerOptions extends React.Component<Prop, State> {
 
   onMinWeightChange = (value: number | null) => {
-    const weight = value as number / 100.0;
+    const weight = value as number / 100.0
     this.props.onOptionsChange({
       ...this.props.value,
       minWeight: weight
     })
   }
   onMaxWeightChange = (value: number | null) => {
-    const weight = value as number / 100.0;
+    const weight = value as number / 100.0
     this.props.onOptionsChange({
       ...this.props.value,
       maxWeight: weight
     })
   }
   onTurnoverConstraintChange = (value: number | null) => {
-    const weight = value as number / 100.0;
+    const weight = value as number / 100.0
     this.props.onOptionsChange({
       ...this.props.value,
       turnoverConstraint: weight
     })
   }
   onBackDaysChange = (value: number | null) => {
-    const back = value || 60;
+    const back = value || 60
     this.props.onOptionsChange({
       ...this.props.value,
       back
@@ -44,11 +44,11 @@ class OptimizerOptions extends React.Component<Prop, State> {
 
   render() {
 
-    const {minWeight, maxWeight, turnoverConstraint, back} = this.props.value;
+    const {minWeight, maxWeight, turnoverConstraint, back} = this.props.value
 
-    const minWeightPercent = minWeight * 100.0;
-    const maxWeightPercent = maxWeight * 100.0;
-    const turnoverConstraintPercent = turnoverConstraint * 100.0;
+    const minWeightPercent = minWeight * 100.0
+    const maxWeightPercent = maxWeight * 100.0
+    const turnoverConstraintPercent = turnoverConstraint * 100.0
 
     return (
       <div className="mv-options">
@@ -73,7 +73,7 @@ class OptimizerOptions extends React.Component<Prop, State> {
                        min={0} max={100} onChange={this.onTurnoverConstraintChange}/>
         </div>
       </div>
-    );
+    )
   }
 }
 

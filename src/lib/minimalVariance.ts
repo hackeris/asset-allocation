@@ -1,8 +1,8 @@
 import qp from 'quadprog'
 import {transpose} from 'lodash-transpose'
 import covariance from 'compute-covariance'
-import AssetInfo from "./AssetInfo";
-import {Options, round} from "./modelCommon";
+import AssetInfo from "./AssetInfo"
+import {Options, round} from "./modelCommon"
 
 function pretend(array: number[][] | number[]) {
   if (array[0] instanceof Array) {
@@ -51,7 +51,7 @@ function minimalVarianceOptimizer(options: Options) {
     ) as number[]
 
     const result = qp.solveQP(Dmat, dvec, Amat, bvec, 1)
-    return round(result.solution.slice(1));
+    return round(result.solution.slice(1))
   }
 }
 

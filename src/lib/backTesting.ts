@@ -1,10 +1,10 @@
 import {last} from 'lodash'
 import alignAssets from './alignAssets'
 
-import AssetInfo from "./AssetInfo";
-import {Options as MinVarOptions} from "./modelCommon";
-import {annualize, cumulative, sharpe, volatility} from "./statistics";
-import {historicalRiskModel, RiskAnalysis} from "./riskAnalysis";
+import AssetInfo from "./AssetInfo"
+import {Options as MinVarOptions} from "./modelCommon"
+import {annualize, cumulative, sharpe, volatility} from "./statistics"
+import {historicalRiskModel, RiskAnalysis} from "./riskAnalysis"
 
 interface Performance {
   days: string[],
@@ -31,11 +31,11 @@ export type Period = 'quarterly' | 'semi_annually' | 'annually'
 function shouldRebalance(i: number, period: Period): boolean {
   switch (period) {
     case "quarterly":
-      return i % 53 === 0;
+      return i % 53 === 0
     case "semi_annually":
-      return i % 126 === 0;
+      return i % 126 === 0
     case "annually":
-      return i % 252 === 0;
+      return i % 252 === 0
   }
 }
 
