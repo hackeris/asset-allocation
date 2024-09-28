@@ -53,22 +53,22 @@ class OptimizerOptions extends React.Component<Prop, State> {
     return (
       <div className="mv-options">
         <div className="mv-options-item">
-          <InputNumber prefix="最小权重：" suffix="%" style={{width: 150}} bordered={false}
+          <InputNumber prefix="最小权重：" suffix="%" style={{width: 150}} variant="borderless"
                        value={minWeightPercent} size="middle"
                        min={0} max={100} onChange={this.onMinWeightChange}/>
         </div>
         <div className="mv-options-item">
-          <InputNumber prefix="最大权重：" suffix="%" style={{width: 150}} bordered={false}
+          <InputNumber prefix="最大权重：" suffix="%" style={{width: 150}} variant="borderless"
                        value={maxWeightPercent} size="middle"
                        min={0} max={100} onChange={this.onMaxWeightChange}/>
         </div>
         <div className="mv-options-item">
-          <InputNumber prefix="模型回溯：" suffix="天" style={{width: 150}} bordered={false}
+          <InputNumber prefix="模型回溯：" suffix="天" style={{width: 150}} variant="borderless"
                        value={back} size="middle" precision={0}
                        min={0} max={250} onChange={this.onBackDaysChange}/>
         </div>
         <div className="mv-options-item">
-          <InputNumber prefix="换手限制：" suffix="%" style={{width: 150}} bordered={false}
+          <InputNumber prefix="换手限制：" suffix="%" style={{width: 150}} variant="borderless"
                        value={turnoverConstraintPercent} size="middle"
                        min={0} max={100} onChange={this.onTurnoverConstraintChange}/>
         </div>

@@ -1,7 +1,10 @@
 import React from "react";
 import {RadioChangeEvent} from "antd"
 import type {ColumnsType} from 'antd/es/table'
-import {Radio, Divider, Space, Button, Table, InputNumber} from "antd";
+import {Radio, Divider, Space, Button, Table, InputNumber, Popover} from "antd";
+import AutoComplete from "antd/es/auto-complete";
+import './AssetAllocation.css'
+
 import minimalVarianceOptimizer from '../lib/minimalVariance'
 import {Options as OptimizerOptionsValue} from '../lib/modelCommon'
 import OptimizerOptions from "./OptimizerOptions";
@@ -11,10 +14,9 @@ import AssetInfo from "../lib/AssetInfo";
 import backTesting, {TestingResult, Period} from "../lib/backTesting";
 import TestingResultView from "./TestingResultView";
 
-import './AssetAllocation.css'
-import AutoComplete from "antd/es/auto-complete";
 import searchAsset from "../lib/searchAsset";
-import riskParityOptimizer from "../lib/riskParity";
+import gradientDescentOptimizer from "../lib/gradientDescent";
+import riskParityObjective, {riskParityAndMinimalVariance} from "../lib/riskParity";
 
 type Prop = {}
 
@@ -38,9 +40,9 @@ type State = {
 }
 
 const periodOptions = [
-  {value: 'quarterly', label: '季度'},
-  {value: 'semi_annually', label: '半年度'},
-  {value: 'annually', label: '年度'}
+  {value: 'quarterly', label: '季度', hover: '每隔一个季度使用模型对组合进行调整'},
+  {value: 'semi_annually', label: '半年度', hover: '每隔半年使用模型对组合进行调整'},
+  {value: 'annually', label: '年度', hover: '每隔一年使用模型对组合进行调整'}
 ]
 
 class AssetAllocation extends React.Component<Prop, State> {
@@ -156,7 +158,10 @@ class AssetAllocation extends React.Component<Prop, State> {
       if (method === 'minimal_variance') {
         actualMethod = minimalVarianceOptimizer(options)
       } else if (method === 'risk_parity') {
-        actualMethod = riskParityOptimizer(options)
+        actualMethod = gradientDescentOptimizer(options, riskParityObjective)
+      } else if (method === 'complex_model') {
+        const optimizer = riskParityAndMinimalVariance(0.1);
+        actualMethod = gradientDescentOptimizer(options, optimizer)
       } else {
         actualMethod = () => assets.map(a => a.weight)
       }
@@ -192,7 +197,7 @@ class AssetAllocation extends React.Component<Prop, State> {
     } = this.state;
 
     let methodOptions;
-    if (method === 'minimal_variance' || method === 'risk_parity') {
+    if (method !== 'manual_specified') {
       methodOptions = (
         <OptimizerOptions value={options} onOptionsChange={this.onOptimizerOptionsChange}/>
       )
@@ -240,16 +245,38 @@ class AssetAllocation extends React.Component<Prop, State> {
       }
     ]
 
+    const models = [{
+      name: '风险最小化',
+      value: 'minimal_variance',
+      hover: '基于资产的历史数据，以最小化波动为目标对投资组合进行优化'
+    }, {
+      name: '风险平价',
+      value: 'risk_parity',
+      hover: '基于资产的历史数据，以均衡各资产的风险贡献为目标对投资组合进行优化'
+    }, {
+      name: '混合模型',
+      value: 'complex_model',
+      hover: '“风险最小化”和“风险平价”的组合'
+    }, {
+      name: '手动指定',
+      value: 'manual_specified',
+      hover: '手动指定资产的配比'
+    }]
+
     return (<div className="asset-allocation">
       <Divider orientation="left" plain>
         选择策略
       </Divider>
       <Radio.Group
+        optionType="button"
+        buttonStyle="solid"
         onChange={this.onModelChange}
         value={this.state.method}>
-        <Radio value={'minimal_variance'}>风险最小化</Radio>
-        <Radio value={'manual_specified'}>指定比例</Radio>
-        <Radio value={'risk_parity'}>风险平价</Radio>
+        {models.map(item => (
+          <Popover content={item.hover}>
+            <Radio value={item.value}>{item.name}</Radio>
+          </Popover>
+        ))}
       </Radio.Group>
 
       {methodOptions}
@@ -259,12 +286,16 @@ class AssetAllocation extends React.Component<Prop, State> {
       </Divider>
 
       <Radio.Group
-        options={periodOptions}
         onChange={this.onPeriodSelected}
         value={period}
         optionType="button"
-        buttonStyle="solid"
-      />
+        buttonStyle="solid">
+        {periodOptions.map(item => (
+          <Popover content={item.hover}>
+            <Radio value={item.value}>{item.label}</Radio>
+          </Popover>
+        ))}
+      </Radio.Group>
 
       <Divider orientation="left" plain>
         选择资产
@@ -289,8 +320,13 @@ class AssetAllocation extends React.Component<Prop, State> {
         模拟
       </Divider>
 
-      <Button type="primary" style={{float: "right"}}
-              onClick={() => this.runBackTesting(benchmark)} loading={running}>模拟</Button>
+      <Popover content='根据上述配置，基于资产历史数据进行模拟交易'>
+        <Button type="primary" style={{float: "right"}}
+                onClick={() => this.runBackTesting(benchmark)}
+                loading={running}>
+          模拟
+        </Button>
+      </Popover>
 
       <TestingResultView result={result} onBenchmarkChange={this.onBenchmarkChange}/>
     </div>)
