@@ -17,7 +17,7 @@ function riskParityObjective(weights: any[], cov: number[][]): number {
 
 export function optimizeByRiskParity(cov: number[][], minW: number, maxW: number) {
 
-  const minIterate = 10;
+  const minIterate = 5000;
   const maxIterate = 50000;
 
   let weights = Array(cov.length).fill(1 / cov.length);
