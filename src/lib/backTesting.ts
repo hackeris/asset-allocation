@@ -2,7 +2,7 @@ import {last} from 'lodash'
 import alignAssets from './alignAssets'
 
 import AssetInfo from "./AssetInfo";
-import {Options as MinVarOptions} from "./minimalVariance";
+import {Options as MinVarOptions} from "./modelCommon";
 import {annualize, cumulative, sharpe, volatility} from "./statistics";
 import {historicalRiskModel, RiskAnalysis} from "./riskAnalysis";
 
@@ -104,6 +104,9 @@ function backTesting(assets: AssetInfo[],
 
     let newHolding
     if (di === 0 || di === 20 || shouldRebalance(di, period)) {
+
+      console.log('rebalace at', days[di])
+
       const maybeNewHolding = weightMethod(assets, days[di])
       const turnover = maybeNewHolding
         .map((h, i) => Math.abs(lastWeight[i] - h))

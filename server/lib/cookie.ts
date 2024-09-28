@@ -13,5 +13,3 @@ export async function getCookieByBrowser(url: string, selectorToWait: string): P
 
   return cookies;
 }
-
-export default {getCookieByBrowser};

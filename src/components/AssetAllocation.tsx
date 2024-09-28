@@ -1,9 +1,10 @@
 import React from "react";
-import {RadioChangeEvent, Select} from "antd"
+import {RadioChangeEvent} from "antd"
 import type {ColumnsType} from 'antd/es/table'
 import {Radio, Divider, Space, Button, Table, InputNumber} from "antd";
-import minimalVarianceOptimizer, {Options as MinimalVarianceOptionsValue} from '../lib/minimalVariance'
-import MinimalVarianceOptions from "./MinimalVarianceOptions";
+import minimalVarianceOptimizer from '../lib/minimalVariance'
+import {Options as OptimizerOptionsValue} from '../lib/modelCommon'
+import OptimizerOptions from "./OptimizerOptions";
 
 import fetchAsset from "../lib/fetchAsset";
 import AssetInfo from "../lib/AssetInfo";
@@ -13,6 +14,7 @@ import TestingResultView from "./TestingResultView";
 import './AssetAllocation.css'
 import AutoComplete from "antd/es/auto-complete";
 import searchAsset from "../lib/searchAsset";
+import riskParityOptimizer from "../lib/riskParity";
 
 type Prop = {}
 
@@ -28,7 +30,7 @@ type State = {
   assetLoading: boolean,
   period: Period,
   searchCandidates: { value: string; label: string }[],
-  options: MinimalVarianceOptionsValue,
+  options: OptimizerOptionsValue,
   assets: AssetItem[],
   benchmark: string,
   running: boolean,
@@ -70,7 +72,7 @@ class AssetAllocation extends React.Component<Prop, State> {
     this.setState(() => ({method}))
   }
 
-  onMinimalVarianceOptionsChange = (options: MinimalVarianceOptionsValue) => {
+  onOptimizerOptionsChange = (options: OptimizerOptionsValue) => {
     this.setState(() => ({options}))
   }
 
@@ -151,10 +153,12 @@ class AssetAllocation extends React.Component<Prop, State> {
       const benchmarkInfo = await fetchAsset(benchmark)
 
       let actualMethod: (assets: AssetInfo[], day: string) => number[]
-      if (method === 'manual_specified') {
-        actualMethod = () => assets.map(a => a.weight)
-      } else {
+      if (method === 'minimal_variance') {
         actualMethod = minimalVarianceOptimizer(options)
+      } else if (method === 'risk_parity') {
+        actualMethod = riskParityOptimizer(options)
+      } else {
+        actualMethod = () => assets.map(a => a.weight)
       }
 
       const result = backTesting(assetsInfo, benchmarkInfo, actualMethod, period, options)
@@ -188,9 +192,9 @@ class AssetAllocation extends React.Component<Prop, State> {
     } = this.state;
 
     let methodOptions;
-    if (method === 'minimal_variance') {
+    if (method === 'minimal_variance' || method === 'risk_parity') {
       methodOptions = (
-        <MinimalVarianceOptions value={options} onOptionsChange={this.onMinimalVarianceOptionsChange}/>
+        <OptimizerOptions value={options} onOptionsChange={this.onOptimizerOptionsChange}/>
       )
     } else {
       methodOptions = <></>
@@ -221,7 +225,7 @@ class AssetAllocation extends React.Component<Prop, State> {
           const percent: number = parseFloat((value * 100.0).toFixed(2))
           return (
             <InputNumber suffix="%" value={percent} min={0} max={100}
-                         disabled={method === 'minimal_variance'} size="middle"
+                         disabled={method !== 'manual_specified'} size="middle"
                          onChange={(v) => this.onAssetWeightChange(item.symbol, v as number)}/>
           );
         }
@@ -244,13 +248,14 @@ class AssetAllocation extends React.Component<Prop, State> {
         onChange={this.onModelChange}
         value={this.state.method}>
         <Radio value={'minimal_variance'}>风险最小化</Radio>
-        <Radio value={'manual_specified'}>固定比例</Radio>
+        <Radio value={'manual_specified'}>指定比例</Radio>
+        <Radio value={'risk_parity'}>风险平价</Radio>
       </Radio.Group>
 
       {methodOptions}
 
       <Divider orientation="left" plain>
-        策略周期
+        交易频率
       </Divider>
 
       <Radio.Group

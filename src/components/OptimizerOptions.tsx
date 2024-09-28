@@ -1,17 +1,17 @@
 import React from 'react'
 import {InputNumber} from 'antd';
-import {Options as MinimalVarianceOptionsValue} from '../lib/minimalVariance'
-import './MinimalVarianceOptions.css'
+import {Options as OptimizerOptionsValue} from '../lib/modelCommon'
+import './OptimizerOptions.css'
 
 
 type Prop = {
-  value: MinimalVarianceOptionsValue,
-  onOptionsChange: (options: MinimalVarianceOptionsValue) => void | null
+  value: OptimizerOptionsValue,
+  onOptionsChange: (options: OptimizerOptionsValue) => void | null
 }
 
 type State = {}
 
-class MinimalVarianceOptions extends React.Component<Prop, State> {
+class OptimizerOptions extends React.Component<Prop, State> {
 
   onMinWeightChange = (value: number | null) => {
     const weight = value as number / 100.0;
@@ -77,4 +77,4 @@ class MinimalVarianceOptions extends React.Component<Prop, State> {
   }
 }
 
-export default MinimalVarianceOptions
+export default OptimizerOptions
