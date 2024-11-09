@@ -52,7 +52,7 @@ class AssetAllocation extends React.Component<Prop, State> {
     method: 'minimal_variance',
     options: {
       minWeight: 0.05,
-      maxWeight: 0.80,
+      maxWeight: 0.70,
       turnoverConstraint: 0.10,
       back: 60
     },
