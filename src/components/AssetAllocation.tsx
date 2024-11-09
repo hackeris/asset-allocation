@@ -165,7 +165,9 @@ class AssetAllocation extends React.Component<Prop, State> {
 
     try {
       const assetsInfo = await Promise.all(
-        assets.map(it => fetchAsset(it.symbol, it.returnModel))
+        assets.map(it => {
+          return fetchAsset(it.symbol, (method === 'maximize_sharp') ? it.returnModel : it.symbol + '.history')
+        })
       )
       const benchmarkInfo = await fetchAsset(benchmark)
 
@@ -257,11 +259,11 @@ class AssetAllocation extends React.Component<Prop, State> {
           )
         }
       },
-      {
+      ...((method === 'maximize_sharp') ? [{
         title: '收益模型',
         dataIndex: 'returnModel',
         key: 'symbol',
-        render: (value, item) => {
+        render: (value: string, item: AssetItem) => {
           return (
             <Select value={item.returnModel}
                     onChange={(v) => this.onReturnModelChange(item.symbol, v as string)}>
@@ -276,7 +278,7 @@ class AssetAllocation extends React.Component<Prop, State> {
             </Select>
           )
         }
-      },
+      }] : []),
       {
         title: '操作',
         key: 'symbol',
