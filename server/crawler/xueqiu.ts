@@ -3,12 +3,18 @@ import fs from 'fs/promises'
 import {getCookieByBrowser} from '../lib/cookie'
 import path from "path"
 import {Cookie} from "puppeteer"
+import {getCnBond} from "./easymony";
 
 interface DailyResponse {
   data: {
     column: string[],
     item: any[][]
   }
+}
+
+interface DailyReturn {
+  dailyReturns: number[],
+  days: string[]
 }
 
 interface QuoteResponse {
@@ -20,15 +26,44 @@ interface QuoteResponse {
 }
 
 interface SearchResponse {
-  data: { code: string, query: string, stock_type: number, state: number }[]
+  data: {
+    code: string,
+    query: string,
+    stock_type: number,
+    state: number
+  }[]
 }
 
 interface FundResponse {
-  data: { fd_name: string, fd_full_name: string }
+  data: {
+    fd_name: string,
+    fd_full_name: string
+  }
 }
 
 interface FundDailyResponse {
-  data: { fund_nav_growth: { date: string, nav: string, percentage: string | null, value: string }[] }
+  data: {
+    fund_nav_growth: {
+      date: string,
+      nav: string,
+      percentage: string | null,
+      value: string
+    }[]
+  }
+}
+
+interface PeResponse {
+  data: {
+    index_eva_pe_growths: {
+      pe: number,
+      ts: number
+    }[]
+  }
+}
+
+interface DailyPe {
+  days: string[],
+  pe: number[]
 }
 
 type AssetInfo = {
@@ -141,7 +176,30 @@ async function getFundName(symbol: string, cookie: string): Promise<string> {
   return data.fd_name
 }
 
-async function getFundDailyReturns(symbol: string, cookie: string) {
+async function getDailyPe(symbol: string, cookie: string): Promise<DailyPe> {
+
+  const url = `https://danjuanfunds.com/djapi/index_eva/pe_history/${symbol}?day=all`
+  const response = await axios.get(
+    url,
+    {
+      headers: {
+        'User-Agent': userAgent,
+        'Accept-Encoding': 'gzip',
+        'Referer': `https://danjuanfunds.com/dj-valuation-table-detail/${symbol}`,
+        'Cookie': cookie
+      }
+    })
+
+  const body = response.data as PeResponse
+  const data = body.data
+
+  return {
+    days: data.index_eva_pe_growths.map(d => dateToString(new Date(d.ts))),
+    pe: data.index_eva_pe_growths.map(e => e.pe)
+  }
+}
+
+async function getFundDailyReturns(symbol: string, cookie: string): Promise<{ day: string, dailyReturn: number }[]> {
 
   const code = symbol.slice(1)
   const url = `https://danjuanfunds.com/djapi/fund/growth/${code}?day=all`
@@ -194,7 +252,7 @@ async function getName(symbol: string, cookie: string): Promise<string> {
   return data.quote.name
 }
 
-async function getDailyReturns(symbol: string, cookie: string) {
+async function getDailyReturns(symbol: string, cookie: string): Promise<{ day: string, dailyReturn: number }[]> {
 
   const dailyItems = []
   let begin = new Date().getTime()
@@ -267,4 +325,42 @@ async function getAssetDetail(symbol: string): Promise<AssetInfo> {
   }
 }
 
-export default {getAssetDetail, search, initXueqiuCookie}
+function movingAverage(series: number[], n: number) {
+  return series.map((e, i) => {
+    const slice = series.slice(Math.max(i - n, 0), i + 1);
+    return slice.reduce((a, el) => a + el, 0) / n
+  })
+}
+
+function mean(series: number[]) {
+  return series.reduce((a, e) => a + e, 0.0) / series.length;
+}
+
+async function getExpectedDailyReturn(symbol: string, type: string): Promise<DailyReturn> {
+
+  if (type === 'pe') {
+    const cookie = await getDanjuanCookie()
+    const dailyPe = await getDailyPe(symbol, cookie)
+
+    const originalYields = dailyPe.pe.map(e => 1.0 / e / 255.0)
+
+    const dailyReturns = movingAverage(originalYields, 60);
+    return {dailyReturns, days: dailyPe.days}
+
+  } else if (type === 'cnbond') {
+
+    return await getCnBond()
+
+  } else if (type === 'history') {
+
+    const detail = await getAssetDetail(symbol)
+
+    const average = mean(detail.dailyReturns)
+
+    return {days: detail.days, dailyReturns: detail.dailyReturns.map(e => average)}
+  }
+
+  throw new Error('Not implemented')
+}
+
+export default {getAssetDetail, getExpectedDailyReturn, search, initXueqiuCookie}

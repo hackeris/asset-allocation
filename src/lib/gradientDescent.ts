@@ -13,8 +13,9 @@ export interface GDOptions {
 }
 
 export function gradientDescent(
+  expected: number[],
   cov: number[][],
-  objective: (weight: number[], cov: number[][]) => number,
+  objective: (weight: number[], expected: number[], cov: number[][]) => number,
   options: Partial<GDOptions>
 ) {
 
@@ -40,8 +41,8 @@ export function gradientDescent(
       const weightsMinus = weights.slice()
       weightsMinus[i] -= delta
 
-      const objPlus = objective(weightsPlus, cov)
-      const objMinus = objective(weightsMinus, cov)
+      const objPlus = objective(weightsPlus, expected, cov)
+      const objMinus = objective(weightsMinus, expected, cov)
 
       return (objPlus - objMinus) / (2 * delta)
     })
@@ -69,7 +70,7 @@ export function gradientDescent(
 }
 
 export function gradientDescentOptimizer(
-  objective: (weight: number[], cov: number[][]) => number,
+  objective: (weight: number[], expected: number[], cov: number[][]) => number,
   options: Options,
   gdOptions: Partial<GDOptions>
 ) {
@@ -78,13 +79,14 @@ export function gradientDescentOptimizer(
 
     const dayIndex = assets[0].days.indexOf(day)
     if (dayIndex < 20) {
-      return assets.map(a => 1.0 / assets.length)
+      return assets.map(_ => 1.0 / assets.length)
     }
     const covStart = Math.max(dayIndex - (back || 60), 0)
     const history = assets.map(a => a.dailyReturns.slice(covStart, dayIndex))
 
+    const expected = assets.map(a => a.expected[dayIndex])
     const cov = covariance(history)
-    const weights = gradientDescent(cov, objective, {
+    const weights = gradientDescent(expected, cov, objective, {
       ...gdOptions,
       minWeight: options.minWeight || gdOptions.minWeight,
       maxWeight: options.maxWeight || gdOptions.maxWeight

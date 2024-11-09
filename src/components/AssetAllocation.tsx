@@ -1,5 +1,5 @@
 import React from "react"
-import {RadioChangeEvent} from "antd"
+import {RadioChangeEvent, Select} from "antd"
 import type {ColumnsType} from 'antd/es/table'
 import {Radio, Divider, Space, Button, Table, InputNumber, Popover} from "antd"
 import AutoComplete from "antd/es/auto-complete"
@@ -16,14 +16,15 @@ import TestingResultView from "./TestingResultView"
 
 import searchAsset from "../lib/searchAsset"
 import gradientDescentOptimizer from "../lib/gradientDescent"
-import riskParityObjective, {riskParityAndMinimalVariance} from "../lib/riskParity"
+import riskParityObjective, {maximizeSharp, riskParityAndMinimalVariance} from "../lib/riskParity"
 
 type Prop = {}
 
 type AssetItem = {
   symbol: string,
   weight: number,
-  name: string
+  name: string,
+  returnModel: string
 }
 
 type State = {
@@ -60,9 +61,9 @@ class AssetAllocation extends React.Component<Prop, State> {
     assetLoading: false,
     searchCandidates: [],
     assets: [
-      {symbol: 'F161119', weight: 0.80, name: '中债综合'},
-      {symbol: 'SH518880', weight: 0.10, name: '黄金ETF'},
-      {symbol: 'SH510880', weight: 0.10, name: '红利ETF'}
+      {symbol: 'CSIH11001', weight: 0.80, name: '中证全债', returnModel: '5y.cnbond'},
+      {symbol: 'SH518880', weight: 0.10, name: '黄金ETF', returnModel: '0.history'},
+      {symbol: 'SH510880', weight: 0.10, name: '红利ETF', returnModel: 'SH000015.pe'}
     ],
     benchmark: 'SH511880',
     running: false,
@@ -104,7 +105,12 @@ class AssetAllocation extends React.Component<Prop, State> {
       try {
         const info = await fetchAsset(symbol)
         this.setState((state) => {
-          const assets = [...state.assets, {symbol, weight: 0, name: info.name}]
+          const assets = [...state.assets, {
+            symbol,
+            weight: 0,
+            name: info.name,
+            returnModel: symbol + '.history'
+          }]
           return {assets, assetLoading: false}
         })
       } catch (e) {
@@ -119,6 +125,15 @@ class AssetAllocation extends React.Component<Prop, State> {
     const target = assets.findIndex(it => it.symbol === symbol)
     if (target >= 0) {
       assets[target] = {...assets[target], weight: value / 100.0}
+    }
+    this.setState(() => ({assets}))
+  }
+
+  onReturnModelChange = (symbol: string, value: string) => {
+    const assets = [...this.state.assets]
+    const target = assets.findIndex(it => it.symbol === symbol)
+    if (target >= 0) {
+      assets[target] = {...assets[target], returnModel: value}
     }
     this.setState(() => ({assets}))
   }
@@ -150,7 +165,7 @@ class AssetAllocation extends React.Component<Prop, State> {
 
     try {
       const assetsInfo = await Promise.all(
-        assets.map(it => fetchAsset(it.symbol))
+        assets.map(it => fetchAsset(it.symbol, it.returnModel))
       )
       const benchmarkInfo = await fetchAsset(benchmark)
 
@@ -162,6 +177,12 @@ class AssetAllocation extends React.Component<Prop, State> {
       } else if (method === 'complex_model') {
         const optimizer = riskParityAndMinimalVariance(0.05)
         actualMethod = gradientDescentOptimizer(optimizer, options, {minIterate: 200, learningRate: 0.01})
+      } else if (method === 'maximize_sharp') {
+        actualMethod = gradientDescentOptimizer(maximizeSharp, options, {
+          minIterate: 200,
+          learningRate: 0.03,
+          tolerance: 0.00005
+        })
       } else {
         actualMethod = () => assets.map(a => a.weight)
       }
@@ -173,7 +194,8 @@ class AssetAllocation extends React.Component<Prop, State> {
         assets: result.assets.map((a, i) => ({
           symbol: a.symbol,
           weight: result.latest[i],
-          name: assets[i].name
+          name: assets[i].name,
+          returnModel: assets[i].returnModel
         })),
         running: false
       }))
@@ -217,7 +239,7 @@ class AssetAllocation extends React.Component<Prop, State> {
       {
         title: '名称',
         dataIndex: 'name',
-        key: 'name',
+        key: 'symbol',
         render: (value, item) => {
           return <a href={'https://xueqiu.com/S/' + item.symbol} target="_blank">{value}</a>
         }
@@ -225,7 +247,7 @@ class AssetAllocation extends React.Component<Prop, State> {
       {
         title: '权重',
         dataIndex: 'weight',
-        key: 'weight',
+        key: 'symbol',
         render: (value, item) => {
           const percent: number = parseFloat((value * 100.0).toFixed(2))
           return (
@@ -236,8 +258,28 @@ class AssetAllocation extends React.Component<Prop, State> {
         }
       },
       {
+        title: '收益模型',
+        dataIndex: 'returnModel',
+        key: 'symbol',
+        render: (value, item) => {
+          return (
+            <Select value={item.returnModel}
+                    onChange={(v) => this.onReturnModelChange(item.symbol, v as string)}>
+              <Select.Option value={item.symbol + '.history'}>历史收益</Select.Option>
+              <Select.Option value="SH000016.pe">上证50 PE</Select.Option>
+              <Select.Option value="SH000300.pe">沪深300 PE</Select.Option>
+              <Select.Option value="SP500.pe">标普500 PE</Select.Option>
+              <Select.Option value="SH000922.pe">中证红利 PE</Select.Option>
+              <Select.Option value="SH000015.pe">上证红利 PE</Select.Option>
+              <Select.Option value="5y.cnbond">5年国债</Select.Option>
+              <Select.Option value="0.history">零收益</Select.Option>
+            </Select>
+          )
+        }
+      },
+      {
         title: '操作',
-        key: 'action',
+        key: 'symbol',
         render: (_, item) => (
           <Button type="link" danger
                   onClick={() => this.onRemoveAsset(item.symbol)}>移除</Button>
@@ -257,6 +299,10 @@ class AssetAllocation extends React.Component<Prop, State> {
       name: '混合模型',
       value: 'complex_model',
       hover: '“风险最小化”和“风险平价”的组合'
+    }, {
+      name: '最大化夏普比',
+      value: 'maximize_sharp',
+      hover: '最大化风险收益比'
     }, {
       name: '手动指定',
       value: 'manual_specified',

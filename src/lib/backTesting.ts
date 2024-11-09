@@ -46,9 +46,10 @@ function slice(result: TestingResult, start: number): TestingResult {
     name: a.name,
     symbol: a.symbol,
     dailyReturns: a.dailyReturns.slice(start),
-    days: a.days.slice(start)
+    days: a.days.slice(start),
+    expected: a.expected.slice(start)
   }))
-  const holdings = [assets.map(a => 0), ...result.holdings.slice(start + 1)]
+  const holdings = [assets.map(_ => 0), ...result.holdings.slice(start + 1)]
 
   const dailyReturns = [0, ...result.profolio.dailyReturns.slice(start + 1)]
   const benchmarkDailyReturns = [0, ...result.benchmark.dailyReturns.slice(start + 1)]
@@ -93,7 +94,7 @@ function backTesting(assets: AssetInfo[],
   const days = aligned[0].days
 
   const holdings: number[][] = []
-  const lastWeight: number [] = assets.map(a => 0.0)
+  const lastWeight: number [] = assets.map(_ => 0.0)
   const returns: number[] = []
   for (let di = 0; di < days.length; di += 1) {
     //  each returns

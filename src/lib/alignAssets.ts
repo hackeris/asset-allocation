@@ -1,9 +1,19 @@
 import {chain, range, last, first} from 'lodash'
 import AssetInfo from "./AssetInfo"
 
-function alignAssetsInternal(assets: AssetInfo[]): AssetInfo[] {
-  const days = chain(assets).map(a => a.days).flatten().uniq().sort((a, b) => a.localeCompare(b)).value()
-  const result = assets.map((a): AssetInfo => ({symbol: a.symbol, name: a.name, days: [], dailyReturns: []}))
+function alignReturnsInternal(assets: { days: string[], dailyReturns: number[] }[]): {
+  days: string[],
+  dailyReturns: number[]
+}[] {
+
+  const days = chain(assets)
+    .map(a => a.days)
+    .flatten().uniq()
+    .sort((a, b) => a.localeCompare(b))
+    .value()
+
+  const result = assets
+    .map((a): { days: string[], dailyReturns: number[] } => ({days: [], dailyReturns: []}))
 
   const cursors = range(assets.length).map(i => 0)
   for (const day of days) {
@@ -27,8 +37,12 @@ function alignAssetsInternal(assets: AssetInfo[]): AssetInfo[] {
   return result
 }
 
-function alignAssets(assets: AssetInfo[]): AssetInfo[] {
-  const aligned = alignAssetsInternal(assets)
+export function alignReturns(assets: { days: string[], dailyReturns: number[] }[]): {
+  days: string[],
+  dailyReturns: number[]
+}[] {
+
+  const aligned = alignReturnsInternal(assets)
 
   //  intersect
   const beginDay = last(
@@ -44,12 +58,64 @@ function alignAssets(assets: AssetInfo[]): AssetInfo[] {
     const begin = a.days.indexOf(beginDay)
     const end = a.days.indexOf(endDay)
     return {
-      symbol: a.symbol,
-      name: a.name,
       days: a.days.slice(begin, end + 1),
       dailyReturns: a.dailyReturns.slice(begin, end + 1)
     }
   })
+}
+
+export function alignAssets(assets: AssetInfo[]): AssetInfo[] {
+  const aligned = alignReturns([
+    ...assets,
+    ...assets.map(a => ({days: a.days, dailyReturns: a.expected}))
+  ])
+  const assetReturns = aligned.slice(0, aligned.length / 2)
+  const expectedReturns = aligned.slice(aligned.length / 2)
+  return assetReturns.map((a, i) => {
+    return {
+      symbol: assets[i].symbol,
+      name: assets[i].name,
+      days: a.days,
+      dailyReturns: a.dailyReturns,
+      expected: expectedReturns[i].dailyReturns
+    }
+  })
+}
+
+export interface Material {
+  benchmark: AssetInfo,
+  assets: AssetInfo[],
+  expected: {
+    days: string[],
+    dailyReturns: number[]
+  }[]
+}
+
+export function alignAll(material: Material): Material {
+
+  const series: {
+    days: string[],
+    dailyReturns: number[]
+  }[] = [material.benchmark, ...material.assets, ...material.expected]
+
+  const aligned = alignReturns(series)
+
+  const benchmark = {
+    ...material.benchmark,
+    days: aligned[0].days,
+    dailyReturns: aligned[0].dailyReturns
+  }
+  const assets = aligned.slice(1, 1 + material.assets.length + 1)
+    .map((e, i) => ({
+      ...material.assets[i],
+      ...e
+    }))
+  const expected = aligned.slice(1 + material.assets.length)
+    .map((e, i) => ({
+      ...material.expected[i],
+      ...e
+    }))
+  return {benchmark, assets, expected}
 }
 
 export default alignAssets
