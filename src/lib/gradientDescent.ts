@@ -47,12 +47,13 @@ export function gradientDescent(
       return (objPlus - objMinus) / (2 * delta)
     })
 
+    //  如果过早收敛，则增加学习率
+    const dynamic = (iter < minIterate && diff < tolerance) ? 5 : 1
+    const lr = learningRate * (1 + Math.random()) * dynamic
+
     // Update weights with constraints
     const lastWeights = weights.slice()
     weights = weights.map((weight, i) => {
-      //  过早收敛，则增加学习率
-      const dynamic = (iter < minIterate && diff < tolerance) ? 5 : 1
-      const lr = learningRate * (1 + Math.random()) * dynamic
       const weightToBe = weight - lr * gradient[i]
       return Math.max(minW, Math.min(maxW, weightToBe))
     })
