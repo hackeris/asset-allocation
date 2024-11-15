@@ -13,25 +13,24 @@ export interface GDOptions {
 }
 
 export function gradientDescent(
-  expected: number[],
-  cov: number[][],
-  objective: (weight: number[], expected: number[], cov: number[][]) => number,
+  initial: number[],
+  objective: (weight: number[]) => number,
   options: Partial<GDOptions>
 ) {
 
-  const minIterate = options.minIterate || 5000
+  const minIterate = options.minIterate || 200
   const maxIterate = options.maxIterate || 50000
   const maxW = options.maxWeight || 1.0
   const minW = options.minWeight || 0.0
 
-  const learningRate = options.learningRate || 0.002
+  const learningRate = options.learningRate || 0.1
   const tolerance = options.tolerance || 0.0001
   const delta = options.delta || 0.00005
 
   // Optimization loop
   let iter = 0
   let diff = tolerance + 1
-  let weights = Array(cov.length).fill(1 / cov.length)
+  let weights = [...initial]
   while ((diff > tolerance || iter < minIterate) && iter < maxIterate) {
 
     const gradient = weights.map((w, i) => {
@@ -41,8 +40,8 @@ export function gradientDescent(
       const weightsMinus = weights.slice()
       weightsMinus[i] -= delta
 
-      const objPlus = objective(weightsPlus, expected, cov)
-      const objMinus = objective(weightsMinus, expected, cov)
+      const objPlus = objective(weightsPlus)
+      const objMinus = objective(weightsMinus)
 
       return (objPlus - objMinus) / (2 * delta)
     })
@@ -87,11 +86,15 @@ export function gradientDescentOptimizer(
 
     const expected = assets.map(a => a.expected[dayIndex])
     const cov = covariance(history)
-    const weights = gradientDescent(expected, cov, objective, {
-      ...gdOptions,
-      minWeight: options.minWeight || gdOptions.minWeight,
-      maxWeight: options.maxWeight || gdOptions.maxWeight
-    })
+    const weights = gradientDescent(
+      Array(cov.length).fill(1 / cov.length),
+      (w) => objective(w, expected, cov),
+      {
+        ...gdOptions,
+        minWeight: options.minWeight || gdOptions.minWeight,
+        maxWeight: options.maxWeight || gdOptions.maxWeight
+      }
+    )
     return round(weights)
   }
 }

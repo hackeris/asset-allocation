@@ -175,16 +175,12 @@ class AssetAllocation extends React.Component<Prop, State> {
       if (method === 'minimal_variance') {
         actualMethod = minimalVarianceOptimizer(options)
       } else if (method === 'risk_parity') {
-        actualMethod = gradientDescentOptimizer(riskParityObjective, options, {})
+        actualMethod = gradientDescentOptimizer(riskParityObjective, options, {learningRate: 0.002, minIterate: 5000})
       } else if (method === 'complex_model') {
         const optimizer = riskParityAndMinimalVariance(0.05)
-        actualMethod = gradientDescentOptimizer(optimizer, options, {minIterate: 200, learningRate: 0.01})
+        actualMethod = gradientDescentOptimizer(optimizer, options, {learningRate: 0.05})
       } else if (method === 'maximize_sharp') {
-        actualMethod = gradientDescentOptimizer(maximizeSharp, options, {
-          minIterate: 200,
-          learningRate: 0.03,
-          tolerance: 0.00005
-        })
+        actualMethod = gradientDescentOptimizer(maximizeSharp, options, {})
       } else {
         actualMethod = () => assets.map(a => a.weight)
       }
