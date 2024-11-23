@@ -83,7 +83,7 @@ function dateToString(d: Date): string {
   return d2.toISOString().substring(0, 10)
 }
 
-const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Edg/117.0.2045.43'
+const userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'
 const cookieFile = path.join(process.cwd(), 'tmp/xueqiu_cookies.json')
 
 export async function initXueqiuCookie(): Promise<Cookie[]> {
