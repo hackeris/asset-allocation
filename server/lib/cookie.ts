@@ -15,6 +15,7 @@ export async function getCookieByBrowser(url: string, selectorToWait: string): P
   await page.waitForSelector(selectorToWait)
 
   const cookies = await page.cookies()
+  await page.close()
   await browser.close()
 
   return cookies
